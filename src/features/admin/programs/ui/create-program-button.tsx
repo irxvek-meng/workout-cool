@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { useI18n } from "locales/client";
 
 import { CreateProgramModal } from "./create-program-modal";
 
 export function CreateProgramButton() {
+  const t = useI18n();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -15,7 +17,7 @@ export function CreateProgramButton() {
         onClick={() => setIsModalOpen(true)}
       >
         <Plus className="h-4 w-4" />
-        Créer un programme
+        {t("admin.create_program_button")}
       </button>
       
       <CreateProgramModal

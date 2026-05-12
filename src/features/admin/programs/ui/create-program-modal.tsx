@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CheckCircle } from "lucide-react";
+import { useI18n } from "locales/client";
 
 import { CreateProgramForm } from "./create-program-form";
 
@@ -10,13 +11,17 @@ interface CreateProgramModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const STEPS = [
-  { id: 1, title: "Informations générales", description: "Titre, description, niveau..." },
-  { id: 2, title: "Configuration", description: "Durée, fréquence, équipement..." },
-  { id: 3, title: "Coachs", description: "Ajouter les coachs du programme" },
-] as const;
-
 export function CreateProgramModal({ open, onOpenChange }: CreateProgramModalProps) {
+  const t = useI18n();
+  const steps = useMemo(
+    () =>
+      [
+        { id: 1, title: t("admin.program_builder.create_step1_title"), description: t("admin.program_builder.create_step1_desc") },
+        { id: 2, title: t("admin.program_builder.create_step2_title"), description: t("admin.program_builder.create_step2_desc") },
+        { id: 3, title: t("admin.program_builder.create_step3_title"), description: t("admin.program_builder.create_step3_desc") },
+      ] as const,
+    [t],
+  );
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
@@ -26,7 +31,7 @@ export function CreateProgramModal({ open, onOpenChange }: CreateProgramModalPro
     }
     
     // Move to next step if not last
-    if (step < STEPS.length) {
+    if (step < steps.length) {
       setCurrentStep(step + 1);
     }
   };
@@ -49,7 +54,7 @@ export function CreateProgramModal({ open, onOpenChange }: CreateProgramModalPro
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-4xl h-full max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Créer un nouveau programme</h3>
+              <h3 className="font-bold text-lg">{t("admin.program_builder.create_modal_title")}</h3>
               <button 
                 className="btn btn-sm btn-circle btn-ghost"
                 onClick={handleClose}
@@ -60,7 +65,7 @@ export function CreateProgramModal({ open, onOpenChange }: CreateProgramModalPro
             
             {/* Steps indicator */}
             <div className="flex items-center justify-between mb-6 px-4">
-              {STEPS.map((step, index) => (
+              {steps.map((step, index) => (
                 <div className="flex items-center" key={step.id}>
                   <div className="flex flex-col items-center">
                     <div
@@ -84,7 +89,7 @@ export function CreateProgramModal({ open, onOpenChange }: CreateProgramModalPro
                     </div>
                   </div>
                   
-                  {index < STEPS.length - 1 && (
+                  {index < steps.length - 1 && (
                     <div
                       className={`w-20 h-0.5 mx-4 ${
                         completedSteps.includes(step.id) ? "bg-success" : "bg-base-300"

@@ -44,7 +44,7 @@ export function SessionAccessGuard({
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
         <div className="max-w-md mx-auto text-center">
           <div className="flex items-center justify-center mx-auto mb-6">
-            <Image alt="Login" height={96} src="/images/emojis/WorkoutCoolPolice.png" width={96} />
+            <Image alt={t("programs.img_sign_in_prompt")} height={96} src="/images/emojis/WorkoutCoolPolice.png" width={96} />
           </div>
 
           <h2 className="text-2xl font-bold mb-4">{t("programs.auth_required")}</h2>
@@ -97,7 +97,7 @@ export function SessionAccessGuard({
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
         <div className="max-w-md mx-auto text-center">
           <div className="flex items-center justify-center mx-auto mb-6">
-            <Image alt="Premium" height={128} src="/images/emojis/WorkoutCoolRich.png" width={128} />
+            <Image alt={t("programs.img_premium_prompt")} height={128} src="/images/emojis/WorkoutCoolRich.png" width={128} />
           </div>
 
           <h2 className="text-2xl font-bold mb-4">{t("programs.premium_required")}</h2>

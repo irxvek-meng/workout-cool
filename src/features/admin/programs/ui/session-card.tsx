@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { Plus, Clock, Dumbbell, Settings, ChevronDown, ChevronRight, Edit } from "lucide-react";
+import { useCurrentLocale, useI18n } from "locales/client";
 
-import { useI18n } from "locales/client";
 
 import { SessionWithExercises } from "../types/program.types";
 import { EditSetsModal } from "./edit-sets-modal";
 import { EditSessionModal } from "./edit-session-modal";
 import { AddExerciseModal } from "./add-exercise-modal";
+
+import { getExerciseName } from "@/shared/lib/exercise-i18n";
 
 interface SessionCardProps {
   session: SessionWithExercises;
@@ -16,6 +18,7 @@ interface SessionCardProps {
 
 export function SessionCard({ session }: SessionCardProps) {
   const t = useI18n();
+  const locale = useCurrentLocale();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
   const [isEditSessionModalOpen, setIsEditSessionModalOpen] = useState(false);
@@ -36,20 +39,20 @@ export function SessionCard({ session }: SessionCardProps) {
                   {t("programs.session")} {session.sessionNumber}: {session.title}
                 </h4>
                 <div className={`badge badge-sm ${session.isPremium ? "badge-primary" : "badge-outline"}`}>
-                  {session.isPremium ? "Premium" : "Gratuit"}
+                  {session.isPremium ? t("programs.premium") : t("programs.free")}
                 </div>
               </div>
               <p className="text-sm text-base-content/60">{session.description}</p>
               <div className="flex items-center gap-4 mt-2 text-sm text-base-content/60">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span>{session.estimatedMinutes} min</span>
+                  <span>
+                    {session.estimatedMinutes} {t("admin.program_builder.session_card_min_suffix")}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Dumbbell className="h-3 w-3" />
-                  <span>
-                    {session.exercises.length} exercice{session.exercises.length !== 1 ? "s" : ""}
-                  </span>
+                  <span>{t("admin.program_builder.exercises_count", { count: session.exercises.length })}</span>
                 </div>
                 {session.equipment.length > 0 && (
                   <div className="flex items-center gap-1">
@@ -61,12 +64,12 @@ export function SessionCard({ session }: SessionCardProps) {
             </div>
           </div>
           <div className="flex gap-2">
-            <button className="btn btn-sm btn-outline" onClick={() => setIsEditSessionModalOpen(true)} title="Éditer la séance">
+            <button className="btn btn-sm btn-outline" onClick={() => setIsEditSessionModalOpen(true)} title={t("admin.program_builder.session_card_edit_session")}>
               <Edit className="h-4 w-4" />
             </button>
             <button className="btn btn-sm btn-outline" onClick={() => setIsAddExerciseModalOpen(true)}>
               <Plus className="h-4 w-4 mr-1" />
-              Exercice
+              {t("admin.program_builder.session_card_add_exercise")}
             </button>
           </div>
         </div>
@@ -79,10 +82,10 @@ export function SessionCard({ session }: SessionCardProps) {
           {session.exercises.length === 0 ? (
             <div className="text-center py-6 border-2 border-dashed border-base-300 rounded-lg">
               <Dumbbell className="h-8 w-8 text-base-content/60 mx-auto mb-2" />
-              <p className="text-base-content/60 mb-3">Aucun exercice dans cette séance</p>
+              <p className="text-base-content/60 mb-3">{t("admin.program_builder.session_card_no_exercises")}</p>
               <button className="btn btn-sm btn-primary" onClick={() => setIsAddExerciseModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" />
-                Ajouter le premier exercice
+                {t("admin.program_builder.session_card_add_first_exercise")}
               </button>
             </div>
           ) : (
@@ -94,13 +97,13 @@ export function SessionCard({ session }: SessionCardProps) {
                       {exercise.order + 1}
                     </div>
                     <div>
-                      <h5 className="font-medium">{exercise.exercise.name}</h5>
+                      <h5 className="font-medium">{getExerciseName(exercise.exercise, locale)}</h5>
                       <p className="text-sm text-base-content/60">
-                        {exercise.suggestedSets.length} série{exercise.suggestedSets.length !== 1 ? "s" : ""}
+                        {t("admin.program_builder.session_card_sets_line", { count: exercise.suggestedSets.length })}
                       </p>
                     </div>
                   </div>
-                  <button className="btn btn-sm btn-ghost" onClick={() => setSelectedExercise(exercise)} title="Éditer les séries">
+                  <button className="btn btn-sm btn-ghost" onClick={() => setSelectedExercise(exercise)} title={t("admin.program_builder.session_card_edit_sets")}>
                     <Settings className="h-4 w-4" />
                   </button>
                 </div>

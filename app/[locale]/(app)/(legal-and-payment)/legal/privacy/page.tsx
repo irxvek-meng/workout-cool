@@ -5,9 +5,16 @@ type PageProps = {
   params: Promise<{ locale: string }>;
 };
 
+// 隐藏协议内容
+const hideContent = true;
+
 export default async function PrivacyPolicyPage({ params }: PageProps) {
   const { locale } = await params;
   const content = await getLocalizedMdx("privacy-policy", locale);
+
+  if (hideContent) {
+    return <div>Privacy Policy</div>;
+  }
 
   return (
     <div className="bg-muted/50 py-12">
@@ -23,7 +30,7 @@ export default async function PrivacyPolicyPage({ params }: PageProps) {
           </p>
         </header>
 
-        <div className="prose prose-neutral max-w-none dark:prose-invert">{content}</div>
+        <div className="prose prose-neutral max-w-none dark:prose-invert">111{content}</div>
       </div>
     </div>
   );

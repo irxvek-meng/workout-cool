@@ -5,6 +5,35 @@ import { WorkoutBuilderStep } from "../types";
 import { shuffleExerciseAction } from "../actions/shuffle-exercise.action";
 import { pickExerciseAction } from "../actions/pick-exercise.action";
 import { getExercisesAction } from "../actions/get-exercises.action";
+import { getMuscleImageUrl } from "@/shared/lib/muscle-image";
+// todo  待处理图片问题 有些图片没有
+async function attachGifPreviewToExercises(
+  groups: { muscle: ExerciseAttributeValueEnum; exercises: any[] }[]
+): Promise<{ muscle: ExerciseAttributeValueEnum; exercises: any[] }[]> {
+  return Promise.all(
+    groups.map(async (group) => ({
+      ...group,
+      exercises: await Promise.all(
+        group.exercises.map(async (exercise: any) => {
+          const slug = exercise.slug ?? exercise.slugEn;
+          if (!slug || typeof slug !== "string") {
+            return exercise;
+          }
+
+          const gifUrl = await getMuscleImageUrl(String(group.muscle), slug);
+          if (!gifUrl) {
+            return exercise;
+          }
+
+          return {
+            ...exercise,
+            fullVideoImageUrl: gifUrl,
+            fullVideoUrl: gifUrl,
+        };
+      })),
+    })),
+  );
+}
 
 interface WorkoutBuilderState {
   currentStep: WorkoutBuilderStep;
@@ -84,7 +113,11 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
       if (result?.serverError) {
         throw new Error(result.serverError);
       }
-      set({ exercisesByMuscle: result?.data || [], isLoadingExercises: false });
+
+      const rawGroups = result?.data || [];
+      const exercisesByMuscle = await attachGifPreviewToExercises(rawGroups);
+
+      set({ exercisesByMuscle, isLoadingExercises: false });
     } catch (error) {
       set({ exercisesError: error, isLoadingExercises: false });
     }

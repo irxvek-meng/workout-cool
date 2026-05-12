@@ -10,20 +10,23 @@ interface ExerciseAttributeCSVRow {
   id: string;
   name: string;
   name_en: string;
+  name_zh_cn: string;
   description: string;
   description_en: string;
+  description_zh_cn?: string;
   full_video_url: string;
   full_video_image_url: string;
   introduction: string;
   introduction_en: string;
+  introduction_zh_cn?: string;
   slug: string;
   slug_en: string;
   attribute_name: string;
   attribute_value: string;
 }
 
-function cleanValue(value: string): string | null {
-  if (!value || value === "NULL" || value.trim() === "") return null;
+function cleanValue(value: string | undefined | null): string | null {
+  if (value == null || value === "NULL" || value.trim() === "") return null;
   return value.trim();
 }
 
@@ -32,18 +35,21 @@ function groupExercisesByOriginalId(rows: ExerciseAttributeCSVRow[]) {
 
   for (const row of rows) {
     const exerciseId = row.id;
-
+    console.log(row);
     if (!exercisesMap.has(exerciseId)) {
       exercisesMap.set(exerciseId, {
         originalId: exerciseId,
         name: row.name,
         nameEn: cleanValue(row.name_en),
+        nameZhCn: cleanValue(row.name_zh_cn),
         description: cleanValue(row.description),
         descriptionEn: cleanValue(row.description_en),
+        descriptionZhCn: cleanValue(row.description_zh_cn),
         fullVideoUrl: cleanValue(row.full_video_url),
         fullVideoImageUrl: cleanValue(row.full_video_image_url),
         introduction: cleanValue(row.introduction),
         introductionEn: cleanValue(row.introduction_en),
+        introductionZhCn: cleanValue(row.introduction_zh_cn),
         slug: cleanValue(row.slug),
         slugEn: cleanValue(row.slug_en),
         attributes: [],
@@ -134,25 +140,33 @@ async function importExercisesFromCSV(filePath: string) {
                 update: {
                   name: exercise.name,
                   nameEn: exercise.nameEn,
+                  nameZhCn: exercise.nameZhCn,
                   description: exercise.description,
                   descriptionEn: exercise.descriptionEn,
+                  descriptionZhCn: exercise.descriptionZhCn,
                   fullVideoUrl: exercise.fullVideoUrl,
                   fullVideoImageUrl: exercise.fullVideoImageUrl,
                   introduction: exercise.introduction,
                   introductionEn: exercise.introductionEn,
+                  introductionZhCn: exercise.introductionZhCn,
                   slugEn: exercise.slugEn,
+                  slugZhCn: exercise.slugZhCn,
                 },
                 create: {
                   name: exercise.name,
                   nameEn: exercise.nameEn,
+                  nameZhCn: exercise.nameZhCn,
                   description: exercise.description,
                   descriptionEn: exercise.descriptionEn,
+                  descriptionZhCn: exercise.descriptionZhCn,
                   fullVideoUrl: exercise.fullVideoUrl,
                   fullVideoImageUrl: exercise.fullVideoImageUrl,
                   introduction: exercise.introduction,
                   introductionEn: exercise.introductionEn,
+                  introductionZhCn: exercise.introductionZhCn,
                   slug: exercise.slug || `exercise-${exercise.originalId}`,
                   slugEn: exercise.slugEn,
+                  slugZhCn: exercise.slugZhCn,
                 },
               });
 
@@ -167,12 +181,27 @@ async function importExercisesFromCSV(filePath: string) {
                   const attributeName = await ensureAttributeNameExists(attr.attributeName);
                   const attributeValue = await ensureAttributeValueExists(attributeName.id, normalizeAttributeValue(attr.attributeValue));
 
-                  await prisma.exerciseAttribute.create({
-                    data: {
+                  // await prisma.exerciseAttribute.create({
+                  //   data: {
+                  //     exerciseId: createdExercise.id,
+                  //     attributeNameId: attributeName.id,
+                  //     attributeValueId: attributeValue.id,
+                  //   },
+                  // });
+                  await prisma.exerciseAttribute.upsert({
+                    where: {
+                      exerciseId_attributeNameId_attributeValueId: {
+                        exerciseId: createdExercise.id,
+                        attributeNameId: attributeName.id,
+                        attributeValueId: attributeValue.id,
+                      }
+                    },
+                    update: {}, // 已存在就啥也不干
+                    create: {
                       exerciseId: createdExercise.id,
                       attributeNameId: attributeName.id,
                       attributeValueId: attributeValue.id,
-                    },
+                    }
                   });
 
                   console.log(`   ✅ Attribute: ${attr.attributeName} = ${attr.attributeValue}`);

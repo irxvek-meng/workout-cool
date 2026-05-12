@@ -4,6 +4,7 @@ import { ProgramVisibility } from "@prisma/client";
 
 import { Locale } from "locales/types";
 import { getLocaleSuffix } from "@/shared/types/i18n.types";
+import { serverAuth } from "@/entities/user/model/get-server-session-user";
 import { prisma } from "@/shared/lib/prisma";
 import { SessionDetailResponse } from "@/entities/program/types/program.types";
 
@@ -93,6 +94,17 @@ export async function getSessionBySlug(
       return null;
     }
 
+    const viewer = await serverAuth();
+    let videoOverrideByExerciseId = new Map<string, string>();
+    if (viewer?.id) {
+      const exerciseIds = session.exercises.map((row) => row.exerciseId);
+      const overrides = await prisma.userExerciseVideoOverride.findMany({
+        where: { userId: viewer.id, exerciseId: { in: exerciseIds } },
+        select: { exerciseId: true, fullVideoUrl: true },
+      });
+      videoOverrideByExerciseId = new Map(overrides.map((o) => [o.exerciseId, o.fullVideoUrl]));
+    }
+
     // adapt to response type
     return {
       session: {
@@ -145,7 +157,7 @@ export async function getSessionBySlug(
             descriptionPt: ex.exercise.descriptionEn || "",
             descriptionRu: ex.exercise.descriptionEn || "",
             descriptionZhCn: ex.exercise.descriptionEn || "",
-            fullVideoUrl: ex.exercise.fullVideoUrl,
+            fullVideoUrl: videoOverrideByExerciseId.get(ex.exercise.id) ?? ex.exercise.fullVideoUrl,
             fullVideoImageUrl: ex.exercise.fullVideoImageUrl,
             introduction: null,
             introductionEn: null,

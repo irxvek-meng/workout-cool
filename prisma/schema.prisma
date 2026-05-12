@@ -1,6 +1,3 @@
-// This is your Prisma schema file
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,43 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  admin
-  user
-}
-
 model User {
-  id            String      @id
-  firstName     String      @default("")
-  lastName      String      @default("")
-  name          String
-  email         String      @unique
-  emailVerified Boolean
-  image         String?
-  locale        String?     @default("fr")
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
-  feedbacks     Feedbacks[]
-
-  role           UserRole?        @default(user)
-  banned         Boolean?         @default(false)
-  banReason      String?
-  banExpires     DateTime?
-  WorkoutSession WorkoutSession[]
-  FavoriteExercises UserFavoriteExercise[]
-
-  // Subscription fields
-  subscriptions Subscription[]
-  licenses      License[]
-  isPremium     Boolean?       @default(false)
-
-  // Onboarding preferences
+  id                    String                  @id
+  firstName             String                  @default("")
+  lastName              String                  @default("")
+  name                  String
+  email                 String                  @unique
+  emailVerified         Boolean
+  image                 String?
+  locale                String?                 @default("fr")
+  createdAt             DateTime
+  updatedAt             DateTime
+  role                  UserRole?               @default(user)
+  banned                Boolean?                @default(false)
+  banReason             String?
+  banExpires            DateTime?
+  isPremium             Boolean?                @default(false)
   onboardingPreferences Json?
-
-  // Training programs
-  programEnrollments UserProgramEnrollment[]
+  accounts              Account[]
+  feedbacks             Feedbacks[]
+  licenses              License[]
+  sessions              Session[]
+  subscriptions         Subscription[]
+  FavoriteExercises     UserFavoriteExercise[]
+  programEnrollments    UserProgramEnrollment[]
+  WorkoutSession        WorkoutSession[]
+  exerciseVideoOverrides UserExerciseVideoOverride[]
 
   @@map("user")
 }
@@ -54,27 +40,26 @@ model User {
 model UserFavoriteExercise {
   id         String   @id @default(cuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   exerciseId String
-  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   updatedAt  DateTime @updatedAt
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, exerciseId])
   @@map("user_favorite_exercises")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime
-  updatedAt DateTime
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime
+  updatedAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
   impersonatedBy String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }
@@ -84,7 +69,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -94,6 +78,7 @@ model Account {
   password              String?
   createdAt             DateTime
   updatedAt             DateTime
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
 }
@@ -110,50 +95,50 @@ model Verification {
 }
 
 model Feedbacks {
-  id      String  @id @default(cuid())
-  review  Int
-  message String
-  email   String?
-  userId  String?
-  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
+  id        String   @id @default(cuid())
+  review    Int
+  message   String
+  email     String?
+  userId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@map("feedbacks")
 }
 
 model Exercise {
-  id                String   @id @default(cuid())
-  name              String
-  nameEn            String?
-  description       String?  @db.Text
-  descriptionEn     String?  @db.Text
-  fullVideoUrl      String?  @db.Text
-  fullVideoImageUrl String?  @db.Text
-  introduction      String?  @db.Text
-  introductionEn    String?  @db.Text
-  slug              String?  @unique
-  slugEn            String?  @unique
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relations
+  id                     String                   @id @default(cuid())
+  name                   String
+  nameEn                 String?
+  description            String?
+  descriptionEn          String?
+  fullVideoUrl           String?
+  fullVideoImageUrl      String?
+  introduction           String?
+  introductionEn         String?
+  slug                   String?                  @unique
+  slugEn                 String?                  @unique
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  nameZhCn               String?
+  descriptionZhCn        String?
+  introductionZhCn       String?
+  slugZhCn               String?                  @unique
   attributes             ExerciseAttribute[]
-  WorkoutSessionExercise WorkoutSessionExercise[]
   ProgramSessionExercise ProgramSessionExercise[]
   favoritesByUsers       UserFavoriteExercise[]
+  WorkoutSessionExercise WorkoutSessionExercise[]
+  userVideoOverrides     UserExerciseVideoOverride[]
 
   @@map("exercises")
 }
 
 model ExerciseAttributeName {
-  id        String                    @id @default(cuid())
-  name      ExerciseAttributeNameEnum @unique
-  createdAt DateTime                  @default(now())
-  updatedAt DateTime                  @updatedAt
-
-  // Relations
+  id         String                    @id @default(cuid())
+  name       ExerciseAttributeNameEnum @unique
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
   values     ExerciseAttributeValue[]
   attributes ExerciseAttribute[]
 
@@ -166,39 +151,367 @@ model ExerciseAttributeValue {
   value           ExerciseAttributeValueEnum
   createdAt       DateTime                   @default(now())
   updatedAt       DateTime                   @updatedAt
-
-  // Relations
-  attributeName ExerciseAttributeName @relation(fields: [attributeNameId], references: [id])
-  attributes    ExerciseAttribute[]
+  attributeName   ExerciseAttributeName      @relation(fields: [attributeNameId], references: [id])
+  attributes      ExerciseAttribute[]
 
   @@unique([attributeNameId, value])
   @@map("exercise_attribute_values")
 }
 
 model ExerciseAttribute {
-  id               String   @id @default(cuid())
+  id               String                 @id @default(cuid())
   exerciseId       String
   attributeNameId  String
   attributeValueId String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relations
-  exercise       Exercise               @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  attributeName  ExerciseAttributeName  @relation(fields: [attributeNameId], references: [id])
-  attributeValue ExerciseAttributeValue @relation(fields: [attributeValueId], references: [id])
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  attributeName    ExerciseAttributeName  @relation(fields: [attributeNameId], references: [id])
+  attributeValue   ExerciseAttributeValue @relation(fields: [attributeValueId], references: [id])
+  exercise         Exercise               @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
 
   @@unique([exerciseId, attributeNameId, attributeValueId])
   @@map("exercise_attributes")
 }
 
-// Enums
+model WorkoutSession {
+  id                  String                       @id @default(cuid())
+  userId              String
+  startedAt           DateTime
+  endedAt             DateTime?
+  duration            Int?
+  muscles             ExerciseAttributeValueEnum[] @default([])
+  rating              Int?
+  ratingComment       String?
+  userSessionProgress UserSessionProgress?
+  exercises           WorkoutSessionExercise[]
+  user                User                         @relation(fields: [userId], references: [id])
+
+  @@map("workout_sessions")
+}
+
+model WorkoutSessionExercise {
+  id               String         @id @default(cuid())
+  workoutSessionId String
+  exerciseId       String
+  order            Int
+  exercise         Exercise       @relation(fields: [exerciseId], references: [id])
+  workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  sets             WorkoutSet[]
+
+  @@map("workout_session_exercises")
+}
+
+model UserExerciseVideoOverride {
+  id           String   @id @default(cuid())
+  userId       String
+  exerciseId   String
+  fullVideoUrl String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, exerciseId])
+  @@map("user_exercise_video_overrides")
+}
+
+model WorkoutSet {
+  id                       String                 @id @default(cuid())
+  workoutSessionExerciseId String
+  setIndex                 Int
+  type                     WorkoutSetType
+  types                    WorkoutSetType[]       @default([])
+  valuesInt                Int[]                  @default([])
+  valuesSec                Int[]                  @default([])
+  units                    WorkoutSetUnit[]       @default([])
+  completed                Boolean                @default(false)
+  workoutSessionExercise   WorkoutSessionExercise @relation(fields: [workoutSessionExerciseId], references: [id], onDelete: Cascade)
+
+  @@map("workout_sets")
+}
+
+model SubscriptionPlan {
+  id               String                @id @default(cuid())
+  priceMonthly     Decimal?              @db.Decimal(10, 2)
+  priceYearly      Decimal?              @db.Decimal(10, 2)
+  currency         String                @default("EUR")
+  interval         String                @default("month")
+  isActive         Boolean               @default(true)
+  availableRegions String[]              @default([])
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  providerMappings PlanProviderMapping[]
+  subscriptions    Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model PlanProviderMapping {
+  id         String           @id @default(cuid())
+  planId     String
+  provider   PaymentProcessor
+  externalId String
+  region     String?
+  metadata   Json?
+  isActive   Boolean          @default(true)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  plan       SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, provider, region])
+  @@index([provider, externalId])
+  @@map("plan_provider_mappings")
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String
+  planId           String
+  revenueCatUserId String?
+  status           SubscriptionStatus
+  startedAt        DateTime
+  currentPeriodEnd DateTime?
+  cancelledAt      DateTime?
+  platform         Platform?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  plan             SubscriptionPlan   @relation(fields: [planId], references: [id])
+  user             User               @relation(fields: [userId], references: [id])
+
+  @@unique([userId, platform])
+  @@map("subscriptions")
+}
+
+model License {
+  id            String    @id @default(cuid())
+  key           String    @unique
+  userId        String?
+  validFrom     DateTime  @default(now())
+  validUntil    DateTime?
+  maxUsers      Int?      @default(1)
+  features      Json?
+  activatedAt   DateTime?
+  lastCheckedAt DateTime?
+  createdAt     DateTime  @default(now())
+  user          User?     @relation(fields: [userId], references: [id])
+
+  @@map("licenses")
+}
+
+model RevenueCatWebhookEvent {
+  id                    String   @id @default(cuid())
+  eventType             String
+  eventTimestamp        DateTime
+  appUserId             String
+  environment           String
+  productId             String?
+  transactionId         String?
+  originalTransactionId String?
+  entitlementIds        String?
+  processed             Boolean  @default(false)
+  processingError       String?
+  retryCount            Int      @default(0)
+  rawEventData          Json
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([appUserId])
+  @@index([eventType])
+  @@index([processed])
+  @@index([eventTimestamp])
+  @@map("revenuecat_webhook_events")
+}
+
+model Program {
+  id                 String                       @id @default(cuid())
+  slug               String                       @unique
+  slugEn             String                       @unique
+  slugEs             String                       @unique
+  slugPt             String                       @unique
+  slugRu             String                       @unique
+  slugZhCn           String                       @unique
+  title              String
+  titleEn            String
+  titleEs            String
+  titlePt            String
+  titleRu            String
+  titleZhCn          String
+  description        String
+  descriptionEn      String
+  descriptionEs      String
+  descriptionPt      String
+  descriptionRu      String
+  descriptionZhCn    String
+  category           String
+  image              String
+  level              ProgramLevel
+  type               ExerciseAttributeValueEnum
+  durationWeeks      Int                          @default(4)
+  sessionsPerWeek    Int                          @default(3)
+  sessionDurationMin Int                          @default(30)
+  equipment          ExerciseAttributeValueEnum[] @default([])
+  isPremium          Boolean                      @default(true)
+  isActive           Boolean                      @default(true)
+  visibility         ProgramVisibility            @default(DRAFT)
+  participantCount   Int                          @default(0)
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+  coaches            ProgramCoach[]
+  weeks              ProgramWeek[]
+  enrollments        UserProgramEnrollment[]
+
+  @@map("programs")
+}
+
+model ProgramCoach {
+  id        String  @id @default(cuid())
+  programId String
+  name      String
+  image     String
+  order     Int     @default(0)
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@map("program_coaches")
+}
+
+model ProgramWeek {
+  id              String           @id @default(cuid())
+  programId       String
+  weekNumber      Int
+  title           String
+  titleEn         String
+  titleEs         String
+  titlePt         String
+  titleRu         String
+  titleZhCn       String
+  description     String
+  descriptionEn   String
+  descriptionEs   String
+  descriptionPt   String
+  descriptionRu   String
+  descriptionZhCn String
+  sessions        ProgramSession[]
+  program         Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, weekNumber])
+  @@map("program_weeks")
+}
+
+model ProgramSession {
+  id               String                       @id @default(cuid())
+  weekId           String
+  sessionNumber    Int
+  title            String
+  titleEn          String
+  titleEs          String
+  titlePt          String
+  titleRu          String
+  titleZhCn        String
+  slug             String
+  slugEn           String
+  slugEs           String
+  slugPt           String
+  slugRu           String
+  slugZhCn         String
+  description      String
+  descriptionEn    String
+  descriptionEs    String
+  descriptionPt    String
+  descriptionRu    String
+  descriptionZhCn  String
+  equipment        ExerciseAttributeValueEnum[] @default([])
+  estimatedMinutes Int
+  isPremium        Boolean                      @default(true)
+  exercises        ProgramSessionExercise[]
+  week             ProgramWeek                  @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  userProgress     UserSessionProgress[]
+
+  @@unique([weekId, sessionNumber])
+  @@unique([weekId, slug])
+  @@unique([weekId, slugEn])
+  @@unique([weekId, slugEs])
+  @@unique([weekId, slugPt])
+  @@unique([weekId, slugRu])
+  @@unique([weekId, slugZhCn])
+  @@map("program_sessions")
+}
+
+model ProgramSessionExercise {
+  id               String                @id @default(cuid())
+  sessionId        String
+  exerciseId       String
+  order            Int
+  instructions     String
+  instructionsEn   String
+  instructionsEs   String
+  instructionsPt   String
+  instructionsRu   String
+  instructionsZhCn String
+  exercise         Exercise              @relation(fields: [exerciseId], references: [id])
+  session          ProgramSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  suggestedSets    ProgramSuggestedSet[]
+
+  @@unique([sessionId, order])
+  @@map("program_session_exercises")
+}
+
+model ProgramSuggestedSet {
+  id                       String                 @id @default(cuid())
+  programSessionExerciseId String
+  setIndex                 Int
+  types                    WorkoutSetType[]       @default([])
+  valuesInt                Int[]                  @default([])
+  valuesSec                Int[]                  @default([])
+  units                    WorkoutSetUnit[]       @default([])
+  programSessionExercise   ProgramSessionExercise @relation(fields: [programSessionExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([programSessionExerciseId, setIndex])
+  @@map("program_suggested_sets")
+}
+
+model UserProgramEnrollment {
+  id                String                @id @default(cuid())
+  userId            String
+  programId         String
+  enrolledAt        DateTime              @default(now())
+  currentWeek       Int                   @default(1)
+  currentSession    Int                   @default(1)
+  completedSessions Int                   @default(0)
+  isActive          Boolean               @default(true)
+  completedAt       DateTime?
+  program           Program               @relation(fields: [programId], references: [id])
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionProgress   UserSessionProgress[]
+
+  @@unique([userId, programId])
+  @@map("user_program_enrollments")
+}
+
+model UserSessionProgress {
+  id               String                @id @default(cuid())
+  enrollmentId     String
+  sessionId        String
+  startedAt        DateTime              @default(now())
+  completedAt      DateTime?
+  workoutSessionId String?               @unique
+  enrollment       UserProgramEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  session          ProgramSession        @relation(fields: [sessionId], references: [id])
+  workoutSession   WorkoutSession?       @relation(fields: [workoutSessionId], references: [id])
+
+  @@unique([enrollmentId, sessionId])
+  @@map("user_session_progress")
+}
+
+enum UserRole {
+  admin
+  user
+}
+
 enum ExercisePrivacy {
   PUBLIC
   PRIVATE
 }
 
-// Noms d'attributs
 enum ExerciseAttributeNameEnum {
   TYPE
   PRIMARY_MUSCLE
@@ -207,9 +520,7 @@ enum ExerciseAttributeNameEnum {
   MECHANICS_TYPE
 }
 
-// Toutes les valeurs possibles
 enum ExerciseAttributeValueEnum {
-  // Types d'exercices
   BODYWEIGHT
   STRENGTH
   POWERLIFTING
@@ -223,8 +534,6 @@ enum ExerciseAttributeValueEnum {
   RESISTANCE
   CROSSFIT
   WEIGHTLIFTING
-
-  // Groupes musculaires
   BICEPS
   SHOULDERS
   CHEST
@@ -248,8 +557,6 @@ enum ExerciseAttributeValueEnum {
   HIP_FLEXOR
   ACHILLES_TENDON
   FINGERS
-
-  // Équipements
   DUMBBELL
   KETTLEBELLS
   BARBELL
@@ -286,56 +593,8 @@ enum ExerciseAttributeValueEnum {
   SKIERG
   ROPE
   NA
-
-  // Types de mécanique
   ISOLATION
   COMPOUND
-}
-
-model WorkoutSession {
-  id        String                       @id @default(cuid())
-  userId    String
-  user      User                         @relation(fields: [userId], references: [id])
-  startedAt DateTime
-  endedAt   DateTime?
-  duration  Int? // en secondes
-  exercises WorkoutSessionExercise[]
-  muscles   ExerciseAttributeValueEnum[] @default([])
-
-  rating        Int? // 1-5 star rating
-  ratingComment String? @db.Text // Optional comment for rating
-
-  // Program progress tracking
-  userSessionProgress UserSessionProgress?
-
-  @@map("workout_sessions")
-}
-
-model WorkoutSessionExercise {
-  id               String         @id @default(cuid())
-  workoutSessionId String
-  exerciseId       String
-  order            Int
-  workoutSession   WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
-  exercise         Exercise       @relation(fields: [exerciseId], references: [id])
-  sets             WorkoutSet[]
-
-  @@map("workout_session_exercises")
-}
-
-model WorkoutSet {
-  id                       String                 @id @default(cuid())
-  workoutSessionExerciseId String
-  setIndex                 Int
-  type                     WorkoutSetType
-  types                    WorkoutSetType[]       @default([])
-  valuesInt                Int[]                  @default([])
-  valuesSec                Int[]                  @default([])
-  units                    WorkoutSetUnit[]       @default([])
-  completed                Boolean                @default(false)
-  workoutSessionExercise   WorkoutSessionExercise @relation(fields: [workoutSessionExerciseId], references: [id], onDelete: Cascade)
-
-  @@map("workout_sets")
 }
 
 enum WorkoutSetType {
@@ -350,154 +609,6 @@ enum WorkoutSetUnit {
   kg
   lbs
 }
-
-// ========================================
-// BILLING & SUBSCRIPTION MODELS
-// ========================================
-
-// Plans d'abonnement - provider-agnostic, minimal KISS approach
-model SubscriptionPlan {
-  id String @id @default(cuid())
-
-  // Pricing - internal source of truth
-  priceMonthly Decimal? @db.Decimal(10, 2)
-  priceYearly  Decimal? @db.Decimal(10, 2)
-  currency     String   @default("EUR")
-  interval     String   @default("month") // month, year
-
-  // Availability
-  isActive         Boolean  @default(true)
-  availableRegions String[] @default([]) // ["EU", "US", "UK"]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  subscriptions    Subscription[]
-  providerMappings PlanProviderMapping[]
-
-  @@map("subscription_plans")
-}
-
-// Provider mapping for external payment systems
-model PlanProviderMapping {
-  id       String           @id @default(cuid())
-  planId   String
-  provider PaymentProcessor
-
-  // External provider IDs
-  externalId String // price_1ABC for Stripe, variant_123 for LemonSqueezy, etc.
-  region     String? // EU, US, UK for regional pricing
-
-  // Provider-specific metadata
-  metadata Json? // Additional provider-specific data
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  plan SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-
-  @@unique([planId, provider, region])
-  @@index([provider, externalId])
-  @@map("plan_provider_mappings")
-}
-
-// Abonnements utilisateurs (source de vérité : RevenueCat pour mobile)
-model Subscription {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  planId String
-  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
-
-  // RevenueCat data (simplified)
-  revenueCatUserId String? // The RevenueCat user ID for sync
-
-  // Status
-  status SubscriptionStatus
-
-  // Dates importantes
-  startedAt        DateTime
-  currentPeriodEnd DateTime?
-  cancelledAt      DateTime?
-
-  // Platform info
-  platform Platform?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, platform])
-  @@map("subscriptions")
-}
-
-// Licences pour self-hosted (alternative aux subscriptions)
-model License {
-  id  String @id @default(cuid())
-  key String @unique
-
-  // Propriétaire
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
-
-  // Validité
-  validFrom  DateTime  @default(now())
-  validUntil DateTime?
-
-  // Limites
-  maxUsers Int?  @default(1)
-  features Json?
-
-  // Activation
-  activatedAt   DateTime?
-  lastCheckedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  @@map("licenses")
-}
-
-// RevenueCat webhook event logging for debugging and monitoring
-model RevenueCatWebhookEvent {
-  id String @id @default(cuid())
-
-  // Event metadata
-  eventType        String  // INITIAL_PURCHASE, RENEWAL, CANCELLATION, etc.
-  eventTimestamp   DateTime
-  appUserId        String
-  environment      String  // SANDBOX or PRODUCTION
-  
-  // Transaction details
-  productId        String?
-  transactionId    String?
-  originalTransactionId String?
-  entitlementIds   String? // JSON array as string
-  
-  // Processing metadata
-  processed        Boolean @default(false)
-  processingError  String? @db.Text
-  retryCount       Int @default(0)
-  
-  // Raw event data for debugging
-  rawEventData     Json
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([appUserId])
-  @@index([eventType])
-  @@index([processed])
-  @@index([eventTimestamp])
-  @@map("revenuecat_webhook_events")
-}
-
-// ========================================
-// BILLING ENUMS
-// ========================================
 
 enum SubscriptionStatus {
   ACTIVE
@@ -521,203 +632,8 @@ enum PaymentProcessor {
   APPLE_PAY
   GOOGLE_PAY
   REVENUECAT
-  NONE // self-hosted
+  NONE
   OTHER
-}
-
-// ========================================
-// TRAINING PROGRAMS
-// ========================================
-
-model Program {
-  id                 String                       @id @default(cuid())
-  slug               String                       @unique
-  slugEn             String                       @unique
-  slugEs             String                       @unique
-  slugPt             String                       @unique
-  slugRu             String                       @unique
-  slugZhCn           String                       @unique
-  title              String
-  titleEn            String
-  titleEs            String
-  titlePt            String
-  titleRu            String
-  titleZhCn          String
-  description        String                       @db.Text
-  descriptionEn      String                       @db.Text
-  descriptionEs      String                       @db.Text
-  descriptionPt      String                       @db.Text
-  descriptionRu      String                       @db.Text
-  descriptionZhCn    String                       @db.Text
-  category           String
-  image              String
-  level              ProgramLevel
-  type               ExerciseAttributeValueEnum
-  durationWeeks      Int                          @default(4)
-  sessionsPerWeek    Int                          @default(3)
-  sessionDurationMin Int                          @default(30)
-  equipment          ExerciseAttributeValueEnum[] @default([])
-  isPremium          Boolean                      @default(true)
-  isActive           Boolean                      @default(true)
-  visibility         ProgramVisibility            @default(DRAFT)
-  participantCount   Int                          @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  weeks       ProgramWeek[]
-  enrollments UserProgramEnrollment[]
-  coaches     ProgramCoach[]
-
-  @@map("programs")
-}
-
-model ProgramCoach {
-  id        String @id @default(cuid())
-  programId String
-  name      String
-  image     String
-  order     Int    @default(0)
-
-  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
-
-  @@map("program_coaches")
-}
-
-model ProgramWeek {
-  id              String @id @default(cuid())
-  programId       String
-  weekNumber      Int
-  title           String
-  titleEn         String
-  titleEs         String
-  titlePt         String
-  titleRu         String
-  titleZhCn       String
-  description     String @db.Text
-  descriptionEn   String @db.Text
-  descriptionEs   String @db.Text
-  descriptionPt   String @db.Text
-  descriptionRu   String @db.Text
-  descriptionZhCn String @db.Text
-
-  program  Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
-  sessions ProgramSession[]
-
-  @@unique([programId, weekNumber])
-  @@map("program_weeks")
-}
-
-model ProgramSession {
-  id               String                       @id @default(cuid())
-  weekId           String
-  sessionNumber    Int
-  title            String
-  titleEn          String
-  titleEs          String
-  titlePt          String
-  titleRu          String
-  titleZhCn        String
-  slug             String
-  slugEn           String
-  slugEs           String
-  slugPt           String
-  slugRu           String
-  slugZhCn         String
-  description      String                       @db.Text
-  descriptionEn    String                       @db.Text
-  descriptionEs    String                       @db.Text
-  descriptionPt    String                       @db.Text
-  descriptionRu    String                       @db.Text
-  descriptionZhCn  String                       @db.Text
-  equipment        ExerciseAttributeValueEnum[] @default([])
-  estimatedMinutes Int
-  isPremium        Boolean                      @default(true)
-
-  week         ProgramWeek              @relation(fields: [weekId], references: [id], onDelete: Cascade)
-  exercises    ProgramSessionExercise[]
-  userProgress UserSessionProgress[]
-
-  @@unique([weekId, sessionNumber])
-  @@unique([weekId, slug])
-  @@unique([weekId, slugEn])
-  @@unique([weekId, slugEs])
-  @@unique([weekId, slugPt])
-  @@unique([weekId, slugRu])
-  @@unique([weekId, slugZhCn])
-  @@map("program_sessions")
-}
-
-model ProgramSessionExercise {
-  id               String @id @default(cuid())
-  sessionId        String
-  exerciseId       String
-  order            Int
-  instructions     String @db.Text
-  instructionsEn   String @db.Text
-  instructionsEs   String @db.Text
-  instructionsPt   String @db.Text
-  instructionsRu   String @db.Text
-  instructionsZhCn String @db.Text
-
-  session       ProgramSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  exercise      Exercise              @relation(fields: [exerciseId], references: [id])
-  suggestedSets ProgramSuggestedSet[]
-
-  @@unique([sessionId, order])
-  @@map("program_session_exercises")
-}
-
-model ProgramSuggestedSet {
-  id                       String           @id @default(cuid())
-  programSessionExerciseId String
-  setIndex                 Int
-  types                    WorkoutSetType[] @default([])
-  valuesInt                Int[]            @default([])
-  valuesSec                Int[]            @default([])
-  units                    WorkoutSetUnit[] @default([])
-
-  programSessionExercise ProgramSessionExercise @relation(fields: [programSessionExerciseId], references: [id], onDelete: Cascade)
-
-  @@unique([programSessionExerciseId, setIndex])
-  @@map("program_suggested_sets")
-}
-
-// User enrollment and progress tracking
-model UserProgramEnrollment {
-  id                String    @id @default(cuid())
-  userId            String
-  programId         String
-  enrolledAt        DateTime  @default(now())
-  currentWeek       Int       @default(1)
-  currentSession    Int       @default(1)
-  completedSessions Int       @default(0)
-  isActive          Boolean   @default(true)
-  completedAt       DateTime?
-
-  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  program         Program               @relation(fields: [programId], references: [id])
-  sessionProgress UserSessionProgress[]
-
-  @@unique([userId, programId])
-  @@map("user_program_enrollments")
-}
-
-model UserSessionProgress {
-  id               String    @id @default(cuid())
-  enrollmentId     String
-  sessionId        String
-  startedAt        DateTime  @default(now())
-  completedAt      DateTime?
-  workoutSessionId String?   @unique // Link to actual workout session
-
-  enrollment     UserProgramEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  session        ProgramSession        @relation(fields: [sessionId], references: [id])
-  workoutSession WorkoutSession?       @relation(fields: [workoutSessionId], references: [id])
-
-  @@unique([enrollmentId, sessionId])
-  @@map("user_session_progress")
 }
 
 enum ProgramLevel {

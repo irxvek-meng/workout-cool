@@ -2,32 +2,19 @@
 
 import { z } from "zod";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2, Search } from "lucide-react";
 import { WorkoutSetType, WorkoutSetUnit } from "@prisma/client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useI18n } from "locales/client";
 
 import { CreateSuggestedSetData, SUGGESTED_SET_TEMPLATES } from "@/features/programs/lib/suggested-sets-helpers";
 
+import { createExerciseAddSchema } from "../lib/program-builder-zod";
 import { ExerciseWithAttributes } from "../types/program.types";
 import { addExerciseToSession, getExercises } from "../actions/add-exercise.action";
 
-const exerciseSchema = z.object({
-  exerciseId: z.string().min(1, "Veuillez sélectionner un exercice"),
-  instructions: z.string().min(1, "Les instructions sont requises"),
-  instructionsEn: z.string().min(1, "Les instructions en anglais sont requises"),
-  suggestedSets: z.array(
-    z.object({
-      setIndex: z.number(),
-      types: z.array(z.nativeEnum(WorkoutSetType)),
-      valuesInt: z.array(z.number()).optional(),
-      valuesSec: z.array(z.number()).optional(),
-      units: z.array(z.nativeEnum(WorkoutSetUnit)).optional(),
-    }),
-  ),
-});
-
-type ExerciseFormData = z.infer<typeof exerciseSchema>;
+type ExerciseFormData = z.infer<ReturnType<typeof createExerciseAddSchema>>;
 
 interface AddExerciseModalProps {
   open: boolean;
@@ -37,6 +24,8 @@ interface AddExerciseModalProps {
 }
 
 export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: AddExerciseModalProps) {
+  const t = useI18n();
+  const exerciseSchema = useMemo(() => createExerciseAddSchema(t as (key: string) => string), [t]);
   const [isLoading, setIsLoading] = useState(false);
   const [exercises, setExercises] = useState<ExerciseWithAttributes[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -142,7 +131,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
       window.location.reload(); // Refresh to show new exercise
     } catch (error) {
       console.error("Error adding exercise:", error);
-      alert("Erreur lors de l'ajout de l'exercice");
+      alert(t("admin.program_builder.err_add_exercise"));
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +155,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-4xl h-full max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Ajouter un exercice</h3>
+              <h3 className="font-bold text-lg">{t("admin.program_builder.add_exercise_title")}</h3>
               <button className="btn btn-sm btn-circle btn-ghost" onClick={handleClose}>
                 ✕
               </button>
@@ -177,14 +166,14 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
               {!selectedExercise && (
                 <div className="card bg-base-100 h-full">
                   <div className="card-body">
-                    <h2 className="card-title">Sélectionner un exercice</h2>
+                    <h2 className="card-title">{t("admin.program_builder.add_exercise_pick_title")}</h2>
                     <div className="space-y-4 h-full">
                       <div className="relative">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-base-content/60" />
                         <input
                           className="input input-bordered w-full pl-10"
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Rechercher un exercice..."
+                          placeholder={t("admin.program_builder.add_exercise_search_ph")}
                           value={searchTerm}
                         />
                       </div>
@@ -198,9 +187,9 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                           >
                             <div>
                               <h4 className="font-medium">{exercise.name}</h4>
-                              <p className="text-sm text-base-content/60">{exercise.nameEn}</p>
+                              <p className="text-sm text-base-content/60">{[exercise.nameEn, exercise.nameZhCn].filter(Boolean).join(" · ")}</p>
                             </div>
-                            <button className="btn btn-sm btn-primary">Sélectionner</button>
+                            <button className="btn btn-sm btn-primary">{t("admin.program_builder.add_exercise_select")}</button>
                           </div>
                         ))}
                       </div>
@@ -218,10 +207,12 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                       <div className="flex items-center justify-between">
                         <div>
                           <h2 className="card-title">{selectedExercise.name}</h2>
-                          <p className="text-sm text-base-content/60">{selectedExercise.nameEn}</p>
+                          <p className="text-sm text-base-content/60">
+                            {[selectedExercise.nameEn, selectedExercise.nameZhCn].filter(Boolean).join(" · ")}
+                          </p>
                         </div>
                         <button className="btn btn-outline" onClick={() => setSelectedExercise(null)} type="button">
-                          Changer
+                          {t("admin.program_builder.common_change")}
                         </button>
                       </div>
                     </div>
@@ -230,30 +221,30 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                   {/* Instructions */}
                   <div className="card bg-base-100 shadow-xl">
                     <div className="card-body h-full">
-                      <h2 className="card-title">Instructions</h2>
+                      <h2 className="card-title">{t("admin.program_builder.add_exercise_instructions_heading")}</h2>
                       <div className="space-y-4">
                         <div className="form-control">
                           <label className="label" htmlFor="instructions">
-                            <span className="label-text">Instructions (FR)</span>
+                            <span className="label-text">{t("admin.program_builder.add_exercise_instructions_fr")}</span>
                           </label>
                           <textarea
                             className="textarea textarea-bordered"
                             id="instructions"
                             {...register("instructions")}
-                            placeholder="Instructions spécifiques pour cet exercice dans ce programme..."
+                            placeholder={t("admin.program_builder.add_exercise_instructions_fr_ph")}
                             rows={3}
                           />
                           {errors.instructions && <div className="text-sm text-error mt-1">{errors.instructions.message}</div>}
                         </div>
                         <div className="form-control">
                           <label className="label" htmlFor="instructionsEn">
-                            <span className="label-text">Instructions (EN)</span>
+                            <span className="label-text">{t("admin.program_builder.add_exercise_instructions_en")}</span>
                           </label>
                           <textarea
                             className="textarea textarea-bordered"
                             id="instructionsEn"
                             {...register("instructionsEn")}
-                            placeholder="Specific instructions for this exercise in this program..."
+                            placeholder={t("admin.program_builder.add_exercise_instructions_en_ph")}
                             rows={3}
                           />
                           {errors.instructionsEn && <div className="text-sm text-error mt-1">{errors.instructionsEn.message}</div>}
@@ -266,20 +257,20 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                   <div className="card bg-base-100 shadow-xl">
                     <div className="card-body">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="card-title">Séries suggérées</h2>
+                        <h2 className="card-title">{t("admin.program_builder.add_exercise_suggested_sets")}</h2>
                         <div className="flex gap-2">
                           <button className="btn btn-sm btn-outline" onClick={strengthTemplate} type="button">
-                            Musculation
+                            {t("admin.program_builder.add_exercise_tpl_strength")}
                           </button>
                           <button className="btn btn-sm btn-outline" onClick={bodyweightTemplate} type="button">
-                            Poids du corps
+                            {t("admin.program_builder.add_exercise_tpl_bodyweight")}
                           </button>
                           <button className="btn btn-sm btn-outline" onClick={timedTemplate} type="button">
-                            Chronométré
+                            {t("admin.program_builder.add_exercise_tpl_timed")}
                           </button>
                           <button className="btn btn-sm btn-primary" onClick={addSet} type="button">
                             <Plus className="h-4 w-4 mr-1" />
-                            Ajouter
+                            {t("admin.program_builder.add_exercise_add_set")}
                           </button>
                         </div>
                       </div>
@@ -292,7 +283,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                             <div className="flex-1 grid grid-cols-5 gap-2">
                               <div className="form-control">
                                 <label className="label">
-                                  <span className="label-text text-xs">Type</span>
+                                  <span className="label-text text-xs">{t("admin.program_builder.add_exercise_type")}</span>
                                 </label>
                                 <select
                                   className="select select-bordered select-sm"
@@ -306,11 +297,11 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                                   }}
                                   value={set.types?.[0] || ""}
                                 >
-                                  <option value="">Sélectionner</option>
-                                  <option value={WorkoutSetType.WEIGHT}>Poids + Reps</option>
-                                  <option value={WorkoutSetType.REPS}>Répétitions seules</option>
-                                  <option value={WorkoutSetType.TIME}>Temps</option>
-                                  <option value={WorkoutSetType.BODYWEIGHT}>Poids du corps</option>
+                                  <option value="">{t("admin.program_builder.add_exercise_type_select")}</option>
+                                  <option value={WorkoutSetType.WEIGHT}>{t("admin.program_builder.add_exercise_type_weight_reps")}</option>
+                                  <option value={WorkoutSetType.REPS}>{t("admin.program_builder.add_exercise_type_reps")}</option>
+                                  <option value={WorkoutSetType.TIME}>{t("admin.program_builder.add_exercise_type_time")}</option>
+                                  <option value={WorkoutSetType.BODYWEIGHT}>{t("admin.program_builder.add_exercise_type_bodyweight")}</option>
                                 </select>
                               </div>
                               
@@ -318,7 +309,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                               {set.types?.includes(WorkoutSetType.WEIGHT) && (
                                 <div className="form-control">
                                   <label className="label">
-                                    <span className="label-text text-xs">Poids</span>
+                                    <span className="label-text text-xs">{t("admin.program_builder.add_exercise_weight")}</span>
                                   </label>
                                   <input
                                     className="input input-bordered input-sm"
@@ -327,7 +318,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                                       const repsValue = set.valuesInt?.[1] || 10;
                                       updateSet(index, "valuesInt", [weightValue, repsValue]);
                                     }}
-                                    placeholder="kg"
+                                    placeholder={t("admin.program_builder.add_exercise_ph_kg")}
                                     type="number"
                                     value={set.valuesInt?.[0] || ""}
                                   />
@@ -338,7 +329,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                               {(set.types?.includes(WorkoutSetType.REPS) || set.types?.includes(WorkoutSetType.WEIGHT)) && (
                                 <div className="form-control">
                                   <label className="label">
-                                    <span className="label-text text-xs">Répétitions</span>
+                                    <span className="label-text text-xs">{t("admin.program_builder.add_exercise_reps")}</span>
                                   </label>
                                   <input
                                     className="input input-bordered input-sm"
@@ -351,7 +342,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                                         updateSet(index, "valuesInt", [repsValue]);
                                       }
                                     }}
-                                    placeholder="reps"
+                                    placeholder={t("admin.program_builder.add_exercise_ph_reps")}
                                     type="number"
                                     value={set.types?.includes(WorkoutSetType.WEIGHT) ? set.valuesInt?.[1] || "" : set.valuesInt?.[0] || ""}
                                   />
@@ -362,7 +353,7 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                               {set.types?.includes(WorkoutSetType.BODYWEIGHT) && (
                                 <div className="form-control">
                                   <label className="label">
-                                    <span className="label-text text-xs">Poids du corps</span>
+                                    <span className="label-text text-xs">{t("admin.program_builder.add_exercise_type_bodyweight")}</span>
                                   </label>
                                   <input
                                     className="input input-bordered input-sm"
@@ -377,12 +368,12 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                               {set.types?.includes(WorkoutSetType.TIME) && (
                                 <div className="form-control">
                                   <label className="label">
-                                    <span className="label-text text-xs">Temps (sec)</span>
+                                    <span className="label-text text-xs">{t("admin.program_builder.add_exercise_time_sec")}</span>
                                   </label>
                                   <input
                                     className="input input-bordered input-sm"
                                     onChange={(e) => updateSet(index, "valuesSec", [parseInt(e.target.value) || 0])}
-                                    placeholder="secondes"
+                                    placeholder={t("admin.program_builder.add_exercise_ph_seconds")}
                                     type="number"
                                     value={set.valuesSec?.[0] || ""}
                                   />
@@ -393,14 +384,14 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
                               {set.types?.includes(WorkoutSetType.WEIGHT) && (
                                 <div className="form-control">
                                   <label className="label">
-                                    <span className="label-text text-xs">Unité</span>
+                                    <span className="label-text text-xs">{t("admin.program_builder.add_exercise_unit")}</span>
                                   </label>
                                   <select
                                     className="select select-bordered select-sm"
                                     onChange={(e) => updateSet(index, "units", [e.target.value])}
                                     value={set.units?.[0] || ""}
                                   >
-                                    <option value="">Sélectionner</option>
+                                    <option value="">{t("admin.program_builder.add_exercise_type_select")}</option>
                                     <option value={WorkoutSetUnit.kg}>kg</option>
                                     <option value={WorkoutSetUnit.lbs}>lbs</option>
                                   </select>
@@ -415,10 +406,10 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
 
                         {suggestedSets.length === 0 && (
                           <div className="text-center py-8 border-2 border-dashed border-base-300 rounded-lg">
-                            <p className="text-base-content/60 mb-3">Aucune série configurée</p>
+                            <p className="text-base-content/60 mb-3">{t("admin.program_builder.add_exercise_empty_sets")}</p>
                             <button className="btn btn-sm btn-primary" onClick={addSet} type="button">
                               <Plus className="h-4 w-4 mr-1" />
-                              Ajouter la première série
+                              {t("admin.program_builder.add_exercise_add_first_set")}
                             </button>
                           </div>
                         )}
@@ -428,10 +419,10 @@ export function AddExerciseModal({ open, onOpenChange, sessionId, nextOrder }: A
 
                   <div className="flex justify-end gap-2 pt-4">
                     <button className="btn btn-outline" onClick={handleClose} type="button">
-                      Annuler
+                      {t("admin.program_builder.common_cancel")}
                     </button>
                     <button className="btn btn-primary" disabled={isLoading} type="submit">
-                      {isLoading ? "Ajout..." : "Ajouter l'exercice"}
+                      {isLoading ? t("admin.program_builder.add_exercise_submitting") : t("admin.program_builder.add_exercise_submit")}
                     </button>
                   </div>
                 </form>

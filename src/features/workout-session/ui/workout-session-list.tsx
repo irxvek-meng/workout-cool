@@ -4,6 +4,7 @@ import { useCurrentLocale, useI18n } from "locales/client";
 import { ExerciseAttributeNameEnum } from "@prisma/client";
 
 import { useWorkoutSessionService } from "@/shared/lib/workout-session/use-workout-session.service";
+import { getExerciseName } from "@/shared/lib/exercise-i18n";
 import { useWorkoutFeedback } from "@/shared/hooks/use-workout-feedback";
 import { useWorkoutSessions } from "@/features/workout-session/model/use-workout-sessions";
 import { useWorkoutBuilderStore } from "@/features/workout-builder/model/workout-builder.store";
@@ -150,7 +151,7 @@ export function WorkoutSessionList() {
               </div>
               <div className="flex flex-wrap gap-2 flex-1">
                 {session.exercises?.map((ex, idx) => {
-                  const exerciseName = locale === "fr" ? ex.name : ex.nameEn;
+                  const exerciseName = getExerciseName(ex, locale);
                   return (
                     <span
                       className={`inline-block border rounded-full px-1 text-xs font-semibold ${BADGE_COLORS[idx % BADGE_COLORS.length]}`}

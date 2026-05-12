@@ -1,14 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus, Trash2 } from "lucide-react";
+import { useI18n } from "locales/client";
 import { ProgramLevel, ExerciseAttributeValueEnum } from "@prisma/client";
 
-import { useI18n } from "locales/client";
-import { allEquipmentValues, getEquipmentTranslation } from "@/shared/lib/workout-session/equipments";
-
+import { ADMIN_PROGRAM_EQUIPMENT_VALUES } from "../lib/admin-equipment-options";
 import { updateProgram } from "../actions/update-program.action";
+
+import { ATTRIBUTE_VALUE_TRANSLATION_KEYS } from "@/shared/lib/attribute-value-translation";
+
+const PROGRAM_TYPE_VALUES: ExerciseAttributeValueEnum[] = [
+  ExerciseAttributeValueEnum.STRENGTH,
+  ExerciseAttributeValueEnum.CARDIO,
+  ExerciseAttributeValueEnum.BODYWEIGHT,
+  ExerciseAttributeValueEnum.STRETCHING,
+  ExerciseAttributeValueEnum.CALISTHENIC,
+];
 
 interface EditProgramModalProps {
   program: {
@@ -75,6 +84,46 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    setFormData({
+      title: program.title,
+      titleEn: program.titleEn,
+      titleEs: program.titleEs,
+      titlePt: program.titlePt,
+      titleRu: program.titleRu,
+      titleZhCn: program.titleZhCn,
+      description: program.description,
+      descriptionEn: program.descriptionEn,
+      descriptionEs: program.descriptionEs,
+      descriptionPt: program.descriptionPt,
+      descriptionRu: program.descriptionRu,
+      descriptionZhCn: program.descriptionZhCn,
+      category: program.category,
+      image: program.image,
+      level: program.level,
+      type: program.type,
+      durationWeeks: program.durationWeeks,
+      sessionsPerWeek: program.sessionsPerWeek,
+      sessionDurationMin: program.sessionDurationMin,
+      equipment: program.equipment,
+      isPremium: program.isPremium,
+      coaches: program.coaches,
+    });
+    setActiveTab("fr");
+  }, [open, program.id]);
+
+  const programTypeOptions = useMemo(() => {
+    const base = [...PROGRAM_TYPE_VALUES];
+    if (!base.includes(formData.type)) base.push(formData.type);
+    return base;
+  }, [formData.type]);
+
+  const equipmentBadgeValues = useMemo(() => {
+    const unique = new Set([...ADMIN_PROGRAM_EQUIPMENT_VALUES, ...formData.equipment]);
+    return Array.from(unique);
+  }, [formData.equipment]);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -84,7 +133,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
       router.refresh();
     } catch (error) {
       console.error("Error saving program:", error);
-      alert(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
+      alert(error instanceof Error ? error.message : t("admin.program_builder.err_save_program"));
     } finally {
       setIsSaving(false);
     }
@@ -124,7 +173,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
     <div className="modal modal-open modal-middle !mt-0">
       <div className="modal-box max-w-4xl overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="font-bold text-lg">Éditer le programme</h3>
+          <h3 className="font-bold text-lg">{t("admin.program_builder.program_modal_edit_title")}</h3>
           <button className="btn btn-sm btn-circle btn-ghost" onClick={handleClose}>
             <X className="h-4 w-4" />
           </button>
@@ -134,22 +183,22 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
           {/* Language Tabs */}
           <div className="tabs tabs-boxed">
             <button className={`tab ${activeTab === "fr" ? "tab-active" : ""}`} onClick={() => setActiveTab("fr")} type="button">
-              🇫🇷 FR
+              {t("admin.program_builder.tab_fr")}
             </button>
             <button className={`tab ${activeTab === "en" ? "tab-active" : ""}`} onClick={() => setActiveTab("en")} type="button">
-              🇺🇸 EN
+              {t("admin.program_builder.tab_en")}
             </button>
             <button className={`tab ${activeTab === "es" ? "tab-active" : ""}`} onClick={() => setActiveTab("es")} type="button">
-              🇪🇸 ES
+              {t("admin.program_builder.tab_es")}
             </button>
             <button className={`tab ${activeTab === "pt" ? "tab-active" : ""}`} onClick={() => setActiveTab("pt")} type="button">
-              🇵🇹 PT
+              {t("admin.program_builder.tab_pt")}
             </button>
             <button className={`tab ${activeTab === "ru" ? "tab-active" : ""}`} onClick={() => setActiveTab("ru")} type="button">
-              🇷🇺 RU
+              {t("admin.program_builder.tab_ru")}
             </button>
             <button className={`tab ${activeTab === "zh" ? "tab-active" : ""}`} onClick={() => setActiveTab("zh")} type="button">
-              🇨🇳 ZH
+              {t("admin.program_builder.tab_zh")}
             </button>
           </div>
 
@@ -158,7 +207,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text">Titre (Français)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_fr")}</span>
                 </label>
                 <input
                   className="input input-bordered w-full"
@@ -170,7 +219,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">Description (Français)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_fr")}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"
@@ -187,7 +236,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text">Title (English)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_en")}</span>
                 </label>
                 <input
                   className="input input-bordered w-full"
@@ -199,7 +248,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">Description (English)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_en")}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"
@@ -216,7 +265,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text">Título (Español)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_es")}</span>
                 </label>
                 <input
                   className="input input-bordered w-full"
@@ -228,7 +277,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">Descripción (Español)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_es")}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"
@@ -245,7 +294,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text">Título (Português)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_pt")}</span>
                 </label>
                 <input
                   className="input input-bordered w-full"
@@ -257,7 +306,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">Descrição (Português)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_pt")}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"
@@ -274,7 +323,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text">Название (Русский)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_ru")}</span>
                 </label>
                 <input
                   className="input input-bordered w-full"
@@ -286,7 +335,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">Описание (Русский)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_ru")}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"
@@ -303,7 +352,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             <div className="space-y-4">
               <div>
                 <label className="label">
-                  <span className="label-text">标题 (中文)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_zh")}</span>
                 </label>
                 <input
                   className="input input-bordered w-full"
@@ -315,7 +364,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
               </div>
               <div>
                 <label className="label">
-                  <span className="label-text">描述 (中文)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_zh")}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full h-24"
@@ -327,39 +376,39 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             </div>
           )}
 
-          {/* Image et emoji */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">
-                <span className="label-text">Image URL</span>
-              </label>
-              <input
-                className="input input-bordered w-full"
-                disabled={isSaving}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                type="url"
-                value={formData.image}
-              />
-            </div>
-          </div>
-
-          {/* Métadonnées */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="label">
-                <span className="label-text">Catégorie</span>
+                <span className="label-text">{t("admin.program_builder.create_form_category")}</span>
               </label>
               <input
                 className="input input-bordered w-full"
                 disabled={isSaving}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder={t("admin.program_builder.create_form_category_ph")}
                 type="text"
                 value={formData.category}
               />
             </div>
             <div>
               <label className="label">
-                <span className="label-text">Niveau</span>
+                <span className="label-text">{t("admin.program_builder.create_form_image_url")}</span>
+              </label>
+              <input
+                className="input input-bordered w-full"
+                disabled={isSaving}
+                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                placeholder={t("admin.program_builder.create_form_image_ph")}
+                type="url"
+                value={formData.image}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="label">
+                <span className="label-text">{t("admin.program_builder.create_form_level")}</span>
               </label>
               <select
                 className="select select-bordered w-full"
@@ -367,14 +416,15 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
                 onChange={(e) => setFormData({ ...formData, level: e.target.value as ProgramLevel })}
                 value={formData.level}
               >
-                <option value="BEGINNER">Débutant</option>
-                <option value="INTERMEDIATE">Intermédiaire</option>
-                <option value="ADVANCED">Avancé</option>
+                <option value={ProgramLevel.BEGINNER}>{t("admin.program_builder.level_beginner")}</option>
+                <option value={ProgramLevel.INTERMEDIATE}>{t("admin.program_builder.level_intermediate")}</option>
+                <option value={ProgramLevel.ADVANCED}>{t("admin.program_builder.level_advanced")}</option>
+                <option value={ProgramLevel.EXPERT}>{t("admin.program_builder.level_expert")}</option>
               </select>
             </div>
             <div>
               <label className="label">
-                <span className="label-text">Type</span>
+                <span className="label-text">{t("admin.program_builder.create_form_type")}</span>
               </label>
               <select
                 className="select select-bordered w-full"
@@ -382,20 +432,19 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as ExerciseAttributeValueEnum })}
                 value={formData.type}
               >
-                <option value="BODYWEIGHT">Poids du corps</option>
-                <option value="DUMBBELL">Haltères</option>
-                <option value="BARBELL">Barre</option>
-                <option value="KETTLEBELLS">Kettlebells</option>
-                <option value="RESISTANCE_BAND">Élastiques</option>
+                {programTypeOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {t(ATTRIBUTE_VALUE_TRANSLATION_KEYS[value] as keyof typeof t)}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* Paramètres du programme */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="label">
-                <span className="label-text">Durée (semaines)</span>
+                <span className="label-text">{t("admin.program_builder.create_form_duration_weeks")}</span>
               </label>
               <input
                 className="input input-bordered w-full"
@@ -408,7 +457,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             </div>
             <div>
               <label className="label">
-                <span className="label-text">Séances/semaine</span>
+                <span className="label-text">{t("admin.program_builder.create_form_sessions_per_week")}</span>
               </label>
               <input
                 className="input input-bordered w-full"
@@ -421,7 +470,7 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             </div>
             <div>
               <label className="label">
-                <span className="label-text">Durée séance (min)</span>
+                <span className="label-text">{t("admin.program_builder.create_form_session_minutes")}</span>
               </label>
               <input
                 className="input input-bordered w-full"
@@ -434,31 +483,23 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
             </div>
           </div>
 
-          {/* Équipement */}
           <div>
             <label className="label">
-              <span className="label-text">Équipement requis</span>
+              <span className="label-text">{t("admin.program_builder.create_form_equipment")}</span>
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {allEquipmentValues.map((equipment) => {
-                const translation = getEquipmentTranslation(equipment, t);
-                return (
-                  <label className="label cursor-pointer justify-start gap-2" key={equipment}>
-                    <input
-                      checked={formData.equipment.includes(equipment)}
-                      className="checkbox checkbox-sm"
-                      disabled={isSaving}
-                      onChange={() => handleEquipmentChange(equipment)}
-                      type="checkbox"
-                    />
-                    <span className="label-text text-sm">{translation.label}</span>
-                  </label>
-                );
-              })}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {equipmentBadgeValues.map((value) => (
+                <div
+                  className={`badge cursor-pointer ${formData.equipment.includes(value) ? "badge-primary" : "badge-outline"}`}
+                  key={value}
+                  onClick={() => !isSaving && handleEquipmentChange(value)}
+                >
+                  {t(ATTRIBUTE_VALUE_TRANSLATION_KEYS[value] as keyof typeof t)}
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Premium */}
           <div>
             <label className="label cursor-pointer justify-start gap-2">
               <input
@@ -468,50 +509,50 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
                 onChange={(e) => setFormData({ ...formData, isPremium: e.target.checked })}
                 type="checkbox"
               />
-              <span className="label-text">Programme Premium</span>
+              <span className="label-text">{t("admin.program_builder.create_form_premium_program")}</span>
             </label>
           </div>
 
-          {/* Coachs */}
           <div>
             <div className="flex items-center justify-between mb-4">
               <label className="label">
-                <span className="label-text font-medium">Coachs du programme</span>
+                <span className="label-text font-medium">{t("admin.program_builder.program_coaches_heading")}</span>
               </label>
               <button className="btn btn-sm btn-primary" disabled={isSaving} onClick={addCoach} type="button">
                 <Plus className="h-4 w-4 mr-1" />
-                Ajouter
+                {t("admin.program_builder.common_add")}
               </button>
             </div>
             <div className="space-y-4">
               {formData.coaches.length === 0 ? (
-                <p className="text-base-content/60 text-center py-8">Aucun coach ajouté. Cliquez sur &quot;Ajouter&quot; pour commencer.</p>
+                <p className="text-base-content/60 text-center py-8">{t("admin.program_builder.create_form_coaches_empty")}</p>
               ) : (
                 formData.coaches.map((coach, index) => (
-                  <div className="flex gap-4 items-end" key={index}>
+                  <div className="flex gap-4 items-end" key={coach.id}>
                     <div className="flex-1 form-control">
                       <label className="label" htmlFor={`coach-name-${index}`}>
-                        <span className="label-text">Nom</span>
+                        <span className="label-text">{t("admin.program_builder.create_form_coach_name")}</span>
                       </label>
                       <input
                         className="input input-bordered"
                         disabled={isSaving}
                         id={`coach-name-${index}`}
                         onChange={(e) => updateCoach(index, "name", e.target.value)}
-                        placeholder="Nom du coach"
+                        placeholder={t("admin.program_builder.create_form_coach_name_ph")}
                         value={coach.name}
                       />
                     </div>
                     <div className="flex-1 form-control">
                       <label className="label" htmlFor={`coach-image-${index}`}>
-                        <span className="label-text">URL de l&apos;image</span>
+                        <span className="label-text">{t("admin.program_builder.create_form_coach_image")}</span>
                       </label>
                       <input
                         className="input input-bordered"
                         disabled={isSaving}
                         id={`coach-image-${index}`}
                         onChange={(e) => updateCoach(index, "image", e.target.value)}
-                        placeholder="https://..."
+                        placeholder={t("admin.program_builder.create_form_image_ph")}
+                        type="url"
                         value={coach.image}
                       />
                     </div>
@@ -527,16 +568,16 @@ export function EditProgramModal({ program, open, onOpenChange }: EditProgramMod
 
         <div className="modal-action">
           <button className="btn btn-ghost" disabled={isSaving} onClick={handleClose}>
-            Annuler
+            {t("admin.program_builder.common_cancel")}
           </button>
           <button className="btn btn-primary" disabled={isSaving} onClick={handleSave}>
             {isSaving ? (
               <>
                 <span className="loading loading-spinner loading-sm"></span>
-                Sauvegarde...
+                {t("admin.program_builder.common_saving")}
               </>
             ) : (
-              "Sauvegarder"
+              t("admin.program_builder.common_save")
             )}
           </button>
         </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { useI18n } from "locales/client";
 
 import { deleteProgram } from "../actions/delete-program.action";
 
@@ -12,6 +13,7 @@ interface DeleteProgramButtonProps {
 }
 
 export function DeleteProgramButton({ programId, programTitle }: DeleteProgramButtonProps) {
+  const t = useI18n();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
@@ -24,7 +26,7 @@ export function DeleteProgramButton({ programId, programTitle }: DeleteProgramBu
       router.refresh();
     } catch (error) {
       console.error("Error deleting program:", error);
-      alert(error instanceof Error ? error.message : "Erreur lors de la suppression");
+      alert(error instanceof Error ? error.message : t("admin.program_builder.err_delete_program"));
     } finally {
       setIsDeleting(false);
     }
@@ -39,12 +41,8 @@ export function DeleteProgramButton({ programId, programTitle }: DeleteProgramBu
       {isModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Confirmer la suppression</h3>
-            <p className="py-4">
-              Êtes-vous sûr de vouloir supprimer le programme <strong>{programTitle}</strong> ? Cette action est irréversible. Au bout de 30
-              jours, tu ne pourras plus accéder à ton compte, ni à tes données. Tu devras créer un nouveau compte si tu veux continuer à
-              utiliser l&apos;application.
-            </p>
+            <h3 className="font-bold text-lg">{t("admin.program_builder.delete_confirm_title")}</h3>
+            <p className="py-4">{t("admin.program_builder.delete_confirm_intro", { title: programTitle })}</p>
             {/* Warning if program has enrollments */}
             <div className="alert alert-warning">
               <svg className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -55,20 +53,20 @@ export function DeleteProgramButton({ programId, programTitle }: DeleteProgramBu
                   strokeWidth="2"
                 />
               </svg>
-              <span>Cette action supprimera toutes les semaines, séances et exercices associés.</span>
+              <span>{t("admin.program_builder.delete_confirm_warning")}</span>
             </div>
             <div className="modal-action">
               <button className="btn btn-outline" disabled={isDeleting} onClick={() => setIsModalOpen(false)}>
-                Annuler
+                {t("admin.program_builder.common_cancel")}
               </button>
               <button className="btn btn-error" disabled={isDeleting} onClick={handleDelete}>
                 {isDeleting ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    Suppression...
+                    {t("admin.program_builder.common_deleting")}
                   </>
                 ) : (
-                  "Supprimer"
+                  t("admin.program_builder.common_delete")
                 )}
               </button>
             </div>

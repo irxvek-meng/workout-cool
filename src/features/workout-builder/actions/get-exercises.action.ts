@@ -2,7 +2,9 @@
 
 import { ExerciseAttributeNameEnum } from "@prisma/client";
 
+import { serverAuth } from "@/entities/user/model/get-server-session-user";
 import { prisma } from "@/shared/lib/prisma";
+import { mergeFullVideoUrlsForUser } from "@/shared/lib/exercise-video-override-merge";
 import { actionClient } from "@/shared/api/safe-actions";
 
 import { getExercisesSchema } from "../schema/get-exercises.schema";
@@ -198,7 +200,17 @@ export const getExercisesAction = actionClient.schema(getExercisesSchema).action
     // Filter muscles that have no exercises
     const filteredResults = exercisesByMuscle.filter((group) => group.exercises.length > 0);
 
-    return filteredResults;
+    const viewer = await serverAuth();
+    if (!viewer?.id) {
+      return filteredResults;
+    }
+
+    return Promise.all(
+      filteredResults.map(async (group) => ({
+        ...group,
+        exercises: await mergeFullVideoUrlsForUser(viewer.id, group.exercises),
+      })),
+    );
   } catch (error) {
     console.error("Error fetching exercises:", error);
     throw new Error("Error fetching exercises");

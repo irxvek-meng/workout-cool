@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Plus, Calendar, Clock, Users, ArrowLeft, Edit } from "lucide-react";
+import { useI18n } from "locales/client";
 
 import { ProgramWithFullDetails } from "../types/program.types";
 import { WeekCard } from "./week-card";
@@ -16,6 +17,7 @@ interface ProgramBuilderProps {
 }
 
 export function ProgramBuilder({ program }: ProgramBuilderProps) {
+  const t = useI18n();
   const [isAddWeekModalOpen, setIsAddWeekModalOpen] = useState(false);
   const [isEditProgramModalOpen, setIsEditProgramModalOpen] = useState(false);
 
@@ -25,7 +27,7 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
       <div className="flex items-center gap-4">
         <Link className="btn btn-ghost btn-sm" href="/admin/programs">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux programmes
+          {t("admin.program_builder.program_builder_back")}
         </Link>
       </div>
 
@@ -45,7 +47,7 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
                 <div className="flex gap-2">
                   <VisibilityBadge currentVisibility={program.visibility} programId={program.id} />
                   <div className={`badge ${program.isPremium ? "badge-primary" : "badge-secondary"}`}>
-                    {program.isPremium ? "Premium" : "Gratuit"}
+                    {program.isPremium ? t("programs.premium") : t("programs.free")}
                   </div>
                   <div className="badge badge-outline">{program.level}</div>
                   <div className="badge badge-outline">{program.category}</div>
@@ -53,11 +55,11 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <button className="btn btn-sm btn-ghost" onClick={() => setIsEditProgramModalOpen(true)} title="Éditer le programme">
+              <button className="btn btn-sm btn-ghost" onClick={() => setIsEditProgramModalOpen(true)} title={t("admin.program_builder.program_builder_edit_program")}>
                 <Edit className="h-4 w-4" />
               </button>
               <div className="text-right">
-                <div className="text-sm text-base-content/60">Participants</div>
+                <div className="text-sm text-base-content/60">{t("admin.program_builder.program_builder_participants")}</div>
                 <div className="text-2xl font-bold">{program.participantCount}</div>
               </div>
             </div>
@@ -66,19 +68,19 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
           <div className="grid grid-cols-4 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-base-content/60" />
-              <span>{program.durationWeeks} semaines</span>
+              <span>{t("admin.program_builder.program_builder_stats_weeks", { n: program.durationWeeks })}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-base-content/60" />
-              <span>{program.sessionDurationMin} min/séance</span>
+              <span>{t("admin.program_builder.program_builder_stats_min_per_session", { n: program.sessionDurationMin })}</span>
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-base-content/60" />
-              <span>{program.sessionsPerWeek} séances/semaine</span>
+              <span>{t("admin.program_builder.program_builder_stats_sessions_per_week", { n: program.sessionsPerWeek })}</span>
             </div>
             <div>
-              <span className="text-base-content/60">Équipement: </span>
-              <span>{program.equipment.join(", ") || "Aucun"}</span>
+              <span className="text-base-content/60">{t("admin.program_builder.program_builder_equipment_prefix")} </span>
+              <span>{program.equipment.join(", ") || t("admin.program_builder.program_builder_equipment_none")}</span>
             </div>
           </div>
         </div>
@@ -88,23 +90,21 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Coachs ({program.coaches.length})</h3>
-            <button className="btn btn-sm btn-primary" onClick={() => setIsEditProgramModalOpen(true)} title="Éditer les coachs">
+            <h3 className="text-lg font-semibold">{t("admin.program_builder.program_builder_coaches_title", { count: program.coaches.length })}</h3>
+            <button className="btn btn-sm btn-primary" onClick={() => setIsEditProgramModalOpen(true)} title={t("admin.program_builder.program_builder_edit_coaches")}>
               <Edit className="h-4 w-4 mr-2" />
-              Éditer les coachs
+              {t("admin.program_builder.program_builder_edit_coaches")}
             </button>
           </div>
 
           {program.coaches.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <Users className="h-12 w-12 text-base-content/60 mb-4" />
-              <h4 className="text-lg font-semibold mb-2">Aucun coach assigné</h4>
-              <p className="text-base-content/60 text-center max-w-md mb-4">
-                Ajoutez des coachs pour présenter les experts qui accompagneront les utilisateurs.
-              </p>
+              <h4 className="text-lg font-semibold mb-2">{t("admin.program_builder.program_builder_no_coach_title")}</h4>
+              <p className="text-base-content/60 text-center max-w-md mb-4">{t("admin.program_builder.program_builder_no_coach_desc")}</p>
               <button className="btn btn-primary btn-sm" onClick={() => setIsEditProgramModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter un coach
+                {t("admin.program_builder.program_builder_add_coach")}
               </button>
             </div>
           ) : (
@@ -116,7 +116,7 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
                   </div>
                   <div className="flex-1">
                     <h5 className="font-medium">{coach.name}</h5>
-                    <span className="text-xs text-base-content/60">Coach #{coach.order + 1}</span>
+                    <span className="text-xs text-base-content/60">{t("admin.program_builder.program_builder_coach_order", { n: coach.order + 1 })}</span>
                   </div>
                 </div>
               ))}
@@ -131,11 +131,11 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
           {/* Add Week Button */}
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">
-              Semaines ({program.weeks.length}/{program.durationWeeks})
+              {t("admin.program_builder.program_builder_weeks_heading", { current: program.weeks.length, total: program.durationWeeks })}
             </h3>
             <button className="btn btn-primary" onClick={() => setIsAddWeekModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter une semaine
+              {t("admin.program_builder.program_builder_add_week")}
             </button>
           </div>
 
@@ -145,13 +145,11 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
               <div className="card bg-base-100 shadow-xl">
                 <div className="card-body flex flex-col items-center justify-center py-12">
                   <Calendar className="h-12 w-12 text-base-content/60 mb-4" />
-                  <h4 className="text-lg font-semibold mb-2">Aucune semaine créée</h4>
-                  <p className="text-base-content/60 text-center max-w-md mb-4">
-                    Commencez par ajouter la première semaine de votre programme.
-                  </p>
+                  <h4 className="text-lg font-semibold mb-2">{t("admin.program_builder.program_builder_no_weeks_title")}</h4>
+                  <p className="text-base-content/60 text-center max-w-md mb-4">{t("admin.program_builder.program_builder_no_weeks_desc")}</p>
                   <button className="btn btn-primary" onClick={() => setIsAddWeekModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Ajouter la première semaine
+                    {t("admin.program_builder.program_builder_add_first_week")}
                   </button>
                 </div>
               </div>
@@ -165,8 +163,8 @@ export function ProgramBuilder({ program }: ProgramBuilderProps) {
         <div className="hidden" id="analytics-content">
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body">
-              <h2 className="card-title">Statistiques</h2>
-              <p className="text-base-content/60">Analytics et métriques du programme (à implémenter)</p>
+              <h2 className="card-title">{t("admin.program_builder.program_builder_analytics_title")}</h2>
+              <p className="text-base-content/60">{t("admin.program_builder.program_builder_analytics_placeholder")}</p>
             </div>
           </div>
         </div>

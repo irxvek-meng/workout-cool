@@ -2,50 +2,19 @@
 
 import { z } from "zod";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { ProgramLevel, ExerciseAttributeValueEnum } from "@prisma/client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useI18n } from "locales/client";
 
+import { ATTRIBUTE_VALUE_TRANSLATION_KEYS } from "@/shared/lib/attribute-value-translation";
+
+import { createProgramFormSchema } from "../lib/program-builder-zod";
+import { ADMIN_PROGRAM_EQUIPMENT_VALUES } from "../lib/admin-equipment-options";
 import { createProgram } from "../actions/create-program.action";
 
-const programSchema = z.object({
-  // Step 1: Basic info
-  title: z.string().min(1, "Le titre est requis"),
-  titleEn: z.string().min(1, "Le titre en anglais est requis"),
-  titleEs: z.string().min(1, "Le titre en espagnol est requis"),
-  titlePt: z.string().min(1, "Le titre en portugais est requis"),
-  titleRu: z.string().min(1, "Le titre en russe est requis"),
-  titleZhCn: z.string().min(1, "Le titre en chinois est requis"),
-  description: z.string().min(1, "La description est requise"),
-  descriptionEn: z.string().min(1, "La description en anglais est requise"),
-  descriptionEs: z.string().min(1, "La description en espagnol est requise"),
-  descriptionPt: z.string().min(1, "La description en portugais est requise"),
-  descriptionRu: z.string().min(1, "La description en russe est requise"),
-  descriptionZhCn: z.string().min(1, "La description en chinois est requise"),
-  category: z.string().min(1, "La catégorie est requise"),
-  image: z.string().url("URL d'image invalide"),
-  level: z.nativeEnum(ProgramLevel),
-  type: z.nativeEnum(ExerciseAttributeValueEnum),
-
-  // Step 2: Configuration
-  durationWeeks: z.number().min(1, "Au moins 1 semaine"),
-  sessionsPerWeek: z.number().min(1, "Au moins 1 séance par semaine"),
-  sessionDurationMin: z.number().min(5, "Au moins 5 minutes"),
-  equipment: z.array(z.nativeEnum(ExerciseAttributeValueEnum)),
-  isPremium: z.boolean(),
-
-  // Step 3: Coaches
-  coaches: z.array(
-    z.object({
-      name: z.string().min(1, "Le nom est requis"),
-      image: z.string().url("URL d'image invalide"),
-      order: z.number(),
-    }),
-  ),
-});
-
-type ProgramFormData = z.infer<typeof programSchema>;
+type ProgramFormData = z.infer<ReturnType<typeof createProgramFormSchema>>;
 
 interface CreateProgramFormProps {
   currentStep: number;
@@ -54,25 +23,17 @@ interface CreateProgramFormProps {
   onCancel: () => void;
 }
 
-const EQUIPMENT_OPTIONS = [
-  { value: ExerciseAttributeValueEnum.BODY_ONLY, label: "Poids du corps" },
-  { value: ExerciseAttributeValueEnum.DUMBBELL, label: "Haltères" },
-  { value: ExerciseAttributeValueEnum.BARBELL, label: "Barre" },
-  { value: ExerciseAttributeValueEnum.KETTLEBELLS, label: "Kettlebells" },
-  { value: ExerciseAttributeValueEnum.BANDS, label: "Élastiques" },
-  { value: ExerciseAttributeValueEnum.MACHINE, label: "Machines" },
-  { value: ExerciseAttributeValueEnum.CABLE, label: "Câbles" },
-];
-
-const TYPE_OPTIONS = [
-  { value: ExerciseAttributeValueEnum.STRENGTH, label: "Musculation" },
-  { value: ExerciseAttributeValueEnum.CARDIO, label: "Cardio" },
-  { value: ExerciseAttributeValueEnum.BODYWEIGHT, label: "Poids du corps" },
-  { value: ExerciseAttributeValueEnum.STRETCHING, label: "Étirements" },
-  { value: ExerciseAttributeValueEnum.CALISTHENIC, label: "Callisthénie" },
+const PROGRAM_TYPE_VALUES: ExerciseAttributeValueEnum[] = [
+  ExerciseAttributeValueEnum.STRENGTH,
+  ExerciseAttributeValueEnum.CARDIO,
+  ExerciseAttributeValueEnum.BODYWEIGHT,
+  ExerciseAttributeValueEnum.STRETCHING,
+  ExerciseAttributeValueEnum.CALISTHENIC,
 ];
 
 export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCancel }: CreateProgramFormProps) {
+  const t = useI18n();
+  const programSchema = useMemo(() => createProgramFormSchema(t as (key: string) => string), [t]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<ExerciseAttributeValueEnum[]>([]);
   const [activeTab, setActiveTab] = useState("fr");
@@ -142,7 +103,7 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
       onSuccess();
     } catch (error) {
       console.error("Error creating program:", error);
-      alert("Erreur lors de la création du programme");
+      alert(t("admin.program_builder.err_create_program"));
     } finally {
       setIsLoading(false);
     }
@@ -151,27 +112,27 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
   const renderStep1 = () => (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
-        <h2 className="card-title">Informations générales</h2>
-        
+        <h2 className="card-title">{t("admin.program_builder.create_form_step1_heading")}</h2>
+
         {/* Language Tabs */}
         <div className="tabs tabs-boxed mb-6">
           <button className={`tab ${activeTab === "fr" ? "tab-active" : ""}`} onClick={() => setActiveTab("fr")} type="button">
-            🇫🇷 FR
+            {t("admin.program_builder.tab_fr")}
           </button>
           <button className={`tab ${activeTab === "en" ? "tab-active" : ""}`} onClick={() => setActiveTab("en")} type="button">
-            🇺🇸 EN
+            {t("admin.program_builder.tab_en")}
           </button>
           <button className={`tab ${activeTab === "es" ? "tab-active" : ""}`} onClick={() => setActiveTab("es")} type="button">
-            🇪🇸 ES
+            {t("admin.program_builder.tab_es")}
           </button>
           <button className={`tab ${activeTab === "pt" ? "tab-active" : ""}`} onClick={() => setActiveTab("pt")} type="button">
-            🇵🇹 PT
+            {t("admin.program_builder.tab_pt")}
           </button>
           <button className={`tab ${activeTab === "ru" ? "tab-active" : ""}`} onClick={() => setActiveTab("ru")} type="button">
-            🇷🇺 RU
+            {t("admin.program_builder.tab_ru")}
           </button>
           <button className={`tab ${activeTab === "zh" ? "tab-active" : ""}`} onClick={() => setActiveTab("zh")} type="button">
-            🇨🇳 ZH
+            {t("admin.program_builder.tab_zh")}
           </button>
         </div>
 
@@ -181,14 +142,14 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             <div className="space-y-4">
               <div className="form-control">
                 <label className="label" htmlFor="title">
-                  <span className="label-text">Titre (Français)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_fr")}</span>
                 </label>
                 <input className="input input-bordered" id="title" {...register("title")} />
                 {errors.title && <div className="text-sm text-error mt-1">{errors.title.message}</div>}
               </div>
               <div className="form-control">
                 <label className="label" htmlFor="description">
-                  <span className="label-text">Description (Français)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_fr")}</span>
                 </label>
                 <textarea className="textarea textarea-bordered h-24" id="description" {...register("description")} />
                 {errors.description && <div className="text-sm text-error mt-1">{errors.description.message}</div>}
@@ -201,14 +162,14 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             <div className="space-y-4">
               <div className="form-control">
                 <label className="label" htmlFor="titleEn">
-                  <span className="label-text">Title (English)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_en")}</span>
                 </label>
                 <input className="input input-bordered" id="titleEn" {...register("titleEn")} />
                 {errors.titleEn && <div className="text-sm text-error mt-1">{errors.titleEn.message}</div>}
               </div>
               <div className="form-control">
                 <label className="label" htmlFor="descriptionEn">
-                  <span className="label-text">Description (English)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_en")}</span>
                 </label>
                 <textarea className="textarea textarea-bordered h-24" id="descriptionEn" {...register("descriptionEn")} />
                 {errors.descriptionEn && <div className="text-sm text-error mt-1">{errors.descriptionEn.message}</div>}
@@ -221,14 +182,14 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             <div className="space-y-4">
               <div className="form-control">
                 <label className="label" htmlFor="titleEs">
-                  <span className="label-text">Título (Español)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_es")}</span>
                 </label>
                 <input className="input input-bordered" id="titleEs" {...register("titleEs")} />
                 {errors.titleEs && <div className="text-sm text-error mt-1">{errors.titleEs.message}</div>}
               </div>
               <div className="form-control">
                 <label className="label" htmlFor="descriptionEs">
-                  <span className="label-text">Descripción (Español)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_es")}</span>
                 </label>
                 <textarea className="textarea textarea-bordered h-24" id="descriptionEs" {...register("descriptionEs")} />
                 {errors.descriptionEs && <div className="text-sm text-error mt-1">{errors.descriptionEs.message}</div>}
@@ -241,14 +202,14 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             <div className="space-y-4">
               <div className="form-control">
                 <label className="label" htmlFor="titlePt">
-                  <span className="label-text">Título (Português)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_pt")}</span>
                 </label>
                 <input className="input input-bordered" id="titlePt" {...register("titlePt")} />
                 {errors.titlePt && <div className="text-sm text-error mt-1">{errors.titlePt.message}</div>}
               </div>
               <div className="form-control">
                 <label className="label" htmlFor="descriptionPt">
-                  <span className="label-text">Descrição (Português)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_pt")}</span>
                 </label>
                 <textarea className="textarea textarea-bordered h-24" id="descriptionPt" {...register("descriptionPt")} />
                 {errors.descriptionPt && <div className="text-sm text-error mt-1">{errors.descriptionPt.message}</div>}
@@ -261,14 +222,14 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             <div className="space-y-4">
               <div className="form-control">
                 <label className="label" htmlFor="titleRu">
-                  <span className="label-text">Название (Русский)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_ru")}</span>
                 </label>
                 <input className="input input-bordered" id="titleRu" {...register("titleRu")} />
                 {errors.titleRu && <div className="text-sm text-error mt-1">{errors.titleRu.message}</div>}
               </div>
               <div className="form-control">
                 <label className="label" htmlFor="descriptionRu">
-                  <span className="label-text">Описание (Русский)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_ru")}</span>
                 </label>
                 <textarea className="textarea textarea-bordered h-24" id="descriptionRu" {...register("descriptionRu")} />
                 {errors.descriptionRu && <div className="text-sm text-error mt-1">{errors.descriptionRu.message}</div>}
@@ -281,14 +242,14 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             <div className="space-y-4">
               <div className="form-control">
                 <label className="label" htmlFor="titleZhCn">
-                  <span className="label-text">标题 (中文)</span>
+                  <span className="label-text">{t("admin.program_builder.label_title_zh")}</span>
                 </label>
                 <input className="input input-bordered" id="titleZhCn" {...register("titleZhCn")} />
                 {errors.titleZhCn && <div className="text-sm text-error mt-1">{errors.titleZhCn.message}</div>}
               </div>
               <div className="form-control">
                 <label className="label" htmlFor="descriptionZhCn">
-                  <span className="label-text">描述 (中文)</span>
+                  <span className="label-text">{t("admin.program_builder.label_description_zh")}</span>
                 </label>
                 <textarea className="textarea textarea-bordered h-24" id="descriptionZhCn" {...register("descriptionZhCn")} />
                 {errors.descriptionZhCn && <div className="text-sm text-error mt-1">{errors.descriptionZhCn.message}</div>}
@@ -299,16 +260,16 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
           <div className="grid grid-cols-2 gap-4">
             <div className="form-control">
               <label className="label" htmlFor="category">
-                <span className="label-text">Catégorie</span>
+                <span className="label-text">{t("admin.program_builder.create_form_category")}</span>
               </label>
-              <input className="input input-bordered" id="category" {...register("category")} placeholder="ex: Musculation" />
+              <input className="input input-bordered" id="category" {...register("category")} placeholder={t("admin.program_builder.create_form_category_ph")} />
               {errors.category && <div className="text-sm text-error mt-1">{errors.category.message}</div>}
             </div>
             <div className="form-control">
               <label className="label" htmlFor="image">
-                <span className="label-text">URL de l&apos;image</span>
+                <span className="label-text">{t("admin.program_builder.create_form_image_url")}</span>
               </label>
-              <input className="input input-bordered" id="image" {...register("image")} placeholder="https://..." />
+              <input className="input input-bordered" id="image" {...register("image")} placeholder={t("admin.program_builder.create_form_image_ph")} />
               {errors.image && <div className="text-sm text-error mt-1">{errors.image.message}</div>}
             </div>
           </div>
@@ -316,31 +277,31 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
           <div className="grid grid-cols-3 gap-4">
             <div className="form-control">
               <label className="label" htmlFor="level">
-                <span className="label-text">Niveau</span>
+                <span className="label-text">{t("admin.program_builder.create_form_level")}</span>
               </label>
               <select
                 className="select select-bordered"
                 defaultValue={ProgramLevel.BEGINNER}
                 onChange={(e) => setValue("level", e.target.value as ProgramLevel)}
               >
-                <option value={ProgramLevel.BEGINNER}>Débutant</option>
-                <option value={ProgramLevel.INTERMEDIATE}>Intermédiaire</option>
-                <option value={ProgramLevel.ADVANCED}>Avancé</option>
-                <option value={ProgramLevel.EXPERT}>Expert</option>
+                <option value={ProgramLevel.BEGINNER}>{t("admin.program_builder.level_beginner")}</option>
+                <option value={ProgramLevel.INTERMEDIATE}>{t("admin.program_builder.level_intermediate")}</option>
+                <option value={ProgramLevel.ADVANCED}>{t("admin.program_builder.level_advanced")}</option>
+                <option value={ProgramLevel.EXPERT}>{t("admin.program_builder.level_expert")}</option>
               </select>
             </div>
             <div className="form-control">
               <label className="label" htmlFor="type">
-                <span className="label-text">Type</span>
+                <span className="label-text">{t("admin.program_builder.create_form_type")}</span>
               </label>
               <select
                 className="select select-bordered"
                 defaultValue={ExerciseAttributeValueEnum.STRENGTH}
                 onChange={(e) => setValue("type", e.target.value as ExerciseAttributeValueEnum)}
               >
-                {TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {PROGRAM_TYPE_VALUES.map((value) => (
+                  <option key={value} value={value}>
+                    {t(ATTRIBUTE_VALUE_TRANSLATION_KEYS[value] as keyof typeof t)}
                   </option>
                 ))}
               </select>
@@ -354,12 +315,12 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
   const renderStep2 = () => (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
-        <h2 className="card-title">Configuration du programme</h2>
+        <h2 className="card-title">{t("admin.program_builder.create_form_step2_heading")}</h2>
         <div className="space-y-6">
           <div className="grid grid-cols-3 gap-4">
             <div className="form-control">
               <label className="label" htmlFor="durationWeeks">
-                <span className="label-text">Durée (semaines)</span>
+                <span className="label-text">{t("admin.program_builder.create_form_duration_weeks")}</span>
               </label>
               <input
                 className="input input-bordered"
@@ -372,7 +333,7 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             </div>
             <div className="form-control">
               <label className="label" htmlFor="sessionsPerWeek">
-                <span className="label-text">Séances/semaine</span>
+                <span className="label-text">{t("admin.program_builder.create_form_sessions_per_week")}</span>
               </label>
               <input
                 className="input input-bordered"
@@ -385,7 +346,7 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
             </div>
             <div className="form-control">
               <label className="label" htmlFor="sessionDurationMin">
-                <span className="label-text">Durée séance (min)</span>
+                <span className="label-text">{t("admin.program_builder.create_form_session_minutes")}</span>
               </label>
               <input
                 className="input input-bordered"
@@ -400,16 +361,16 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
 
           <div>
             <label className="label">
-              <span className="label-text">Équipement requis</span>
+              <span className="label-text">{t("admin.program_builder.create_form_equipment")}</span>
             </label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {EQUIPMENT_OPTIONS.map((option) => (
+              {ADMIN_PROGRAM_EQUIPMENT_VALUES.map((value) => (
                 <div
-                  className={`badge cursor-pointer ${selectedEquipment.includes(option.value) ? "badge-primary" : "badge-outline"}`}
-                  key={option.value}
-                  onClick={() => toggleEquipment(option.value)}
+                  className={`badge cursor-pointer ${selectedEquipment.includes(value) ? "badge-primary" : "badge-outline"}`}
+                  key={value}
+                  onClick={() => toggleEquipment(value)}
                 >
-                  {option.label}
+                  {t(ATTRIBUTE_VALUE_TRANSLATION_KEYS[value] as keyof typeof t)}
                 </div>
               ))}
             </div>
@@ -424,7 +385,7 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
                 onChange={(e) => setValue("isPremium", e.target.checked)}
                 type="checkbox"
               />
-              <span className="label-text">Programme premium</span>
+              <span className="label-text">{t("admin.program_builder.create_form_premium_program")}</span>
             </label>
           </div>
         </div>
@@ -436,38 +397,38 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="card-title">Coachs du programme</h2>
+          <h2 className="card-title">{t("admin.program_builder.create_form_step3_heading")}</h2>
           <button className="btn btn-sm btn-primary" onClick={addCoach} type="button">
             <Plus className="h-4 w-4 mr-1" />
-            Ajouter
+            {t("admin.program_builder.common_add")}
           </button>
         </div>
         <div className="space-y-4">
           {coaches.length === 0 ? (
-            <p className="text-base-content/60 text-center py-8">Aucun coach ajouté. Cliquez sur &quot;Ajouter&quot; pour commencer.</p>
+            <p className="text-base-content/60 text-center py-8">{t("admin.program_builder.create_form_coaches_empty")}</p>
           ) : (
             coaches.map((_, index) => (
               <div className="flex gap-4 items-end" key={index}>
                 <div className="flex-1 form-control">
                   <label className="label" htmlFor={`coach-name-${index}`}>
-                    <span className="label-text">Nom</span>
+                    <span className="label-text">{t("admin.program_builder.create_form_coach_name")}</span>
                   </label>
                   <input
                     className="input input-bordered"
                     id={`coach-name-${index}`}
                     {...register(`coaches.${index}.name`)}
-                    placeholder="Nom du coach"
+                    placeholder={t("admin.program_builder.create_form_coach_name_ph")}
                   />
                 </div>
                 <div className="flex-1 form-control">
                   <label className="label" htmlFor={`coach-image-${index}`}>
-                    <span className="label-text">URL de l&apos;image</span>
+                    <span className="label-text">{t("admin.program_builder.create_form_coach_image")}</span>
                   </label>
                   <input
                     className="input input-bordered"
                     id={`coach-image-${index}`}
                     {...register(`coaches.${index}.image`)}
-                    placeholder="https://..."
+                    placeholder={t("admin.program_builder.create_form_image_ph")}
                   />
                 </div>
                 <button className="btn btn-outline btn-sm" onClick={() => removeCoach(index)} type="button">
@@ -489,10 +450,14 @@ export function CreateProgramForm({ currentStep, onStepComplete, onSuccess, onCa
 
       <div className="flex justify-between pt-6 border-t border-base-300">
         <button className="btn btn-outline" onClick={onCancel} type="button">
-          Annuler
+          {t("admin.program_builder.common_cancel")}
         </button>
         <button className="btn btn-primary" disabled={isLoading} type="submit">
-          {currentStep === 3 ? (isLoading ? "Création..." : "Créer le programme") : "Suivant"}
+          {currentStep === 3
+            ? isLoading
+              ? t("admin.program_builder.create_form_submit_creating")
+              : t("admin.program_builder.create_form_submit_create")
+            : t("admin.program_builder.common_next")}
         </button>
       </div>
     </form>

@@ -9,6 +9,7 @@ import { ExerciseVideoModal } from "./exercise-video-modal";
 
 import type { ExerciseWithAttributes } from "../types";
 
+import { getExerciseName } from "@/shared/lib/exercise-i18n";
 import useBoolean from "@/shared/hooks/useBoolean";
 import { Button } from "@/components/ui/button";
 
@@ -27,9 +28,9 @@ const MUSCLE_CONFIGS: Record<string, string> = {
  */
 export function ExerciseListItemOverlay({ exercise, muscle }: { exercise: ExerciseWithAttributes; muscle: string }) {
   const locale = useCurrentLocale();
-  const exerciseName = locale === "fr" ? exercise.name : exercise.nameEn;
+  const exerciseName = getExerciseName(exercise, locale);
   const muscleColor = MUSCLE_CONFIGS[muscle] || "bg-gray-500";
-
+  
   return (
     <div
       className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-600 rounded-lg shadow-2xl shadow-blue-500/20 select-none"
@@ -76,7 +77,7 @@ export const ExerciseListItem = React.memo(function ExerciseListItem({
   onShuffle,
   onDelete,
   isShuffling,
-  isActive,
+  isActive: _isActive,
   onShuffleFeedback,
   onDeleteFeedback,
 }: Omit<ExerciseListItemProps, "onPick">) {
@@ -96,7 +97,9 @@ export const ExerciseListItem = React.memo(function ExerciseListItem({
   // When this item is being dragged, it becomes a ghost placeholder
   const isGhost = isDragging;
 
-  const exerciseName = locale === "fr" ? exercise.name : exercise.nameEn;
+  const exerciseName = getExerciseName(exercise, locale);
+  console.log("muscle", muscle, exercise);
+
   const muscleColor = MUSCLE_CONFIGS[muscle] || "bg-gray-500";
   const muscleTitle = t(("workout_builder.muscles." + muscle.toLowerCase()) as keyof typeof t);
 
@@ -141,7 +144,7 @@ export const ExerciseListItem = React.memo(function ExerciseListItem({
             <GripVertical className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 transition-colors group-hover:text-slate-500" />
           </div>
 
-          {exercise.fullVideoImageUrl && (
+          {exercise.fullVideoImageUrl && (  
             <div
               className="relative h-8 w-8 sm:h-10 sm:w-10 rounded overflow-hidden shrink-0 bg-slate-200 dark:bg-slate-800 cursor-pointer border border-slate-200 dark:border-slate-700/50"
               onClick={() => { setModalTab("video"); playVideo.setTrue(); }}
@@ -193,7 +196,14 @@ export const ExerciseListItem = React.memo(function ExerciseListItem({
             <Trash2 className="h-4 w-4" />
           </button>
 
-          {exercise.fullVideoUrl && <ExerciseVideoModal defaultTab={modalTab} exercise={exercise} onOpenChange={playVideo.toggle} open={playVideo.value} />}
+          {exercise.fullVideoUrl && (
+            <ExerciseVideoModal
+              defaultTab={modalTab}
+              exercise={exercise}
+              onOpenChange={playVideo.toggle}
+              open={playVideo.value}
+            />
+          )}
         </>
       )}
     </div>

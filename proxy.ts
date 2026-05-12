@@ -44,7 +44,10 @@ function detectUserLocale(request: NextRequest): string {
 const I18nMiddleware = createI18nMiddleware({
   locales: ["en", "fr", "es", "zh-CN", "ru", "pt"],
   defaultLocale: "en",
-  urlMappingStrategy: "rewrite",
+  // Use "redirect" (default) so the locale prefix stays in the browser URL. With "rewrite",
+  // next-international can strip `/zh-CN/...` down to `/...` when the cookie locale disagrees,
+  // which breaks `app/[locale]/...` routing and looks like "always back to home".
+  urlMappingStrategy: "redirect",
 });
 
 export async function proxy(request: NextRequest) {
@@ -89,7 +92,8 @@ export async function proxy(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams.toString();
   response.headers.set("searchParams", searchParams);
 
-  if (request.nextUrl.pathname.includes("/dashboard")) {
+  // Only gate the admin dashboard (not every URL containing the substring "dashboard")
+  if (request.nextUrl.pathname.includes("/admin/dashboard")) {
     const session = getSessionCookie(request);
 
     if (!session) {

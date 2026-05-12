@@ -3,7 +3,9 @@
 import { z } from "zod";
 import { ExerciseAttributeNameEnum, ExerciseAttributeValueEnum } from "@prisma/client";
 
+import { serverAuth } from "@/entities/user/model/get-server-session-user";
 import { prisma } from "@/shared/lib/prisma";
+import { mergeFullVideoUrlsForUser } from "@/shared/lib/exercise-video-override-merge";
 import { actionClient } from "@/shared/api/safe-actions";
 
 const shuffleExerciseSchema = z.object({
@@ -153,7 +155,10 @@ export const shuffleExerciseAction = actionClient.schema(shuffleExerciseSchema).
     const randomIndex = Math.floor(Math.random() * allExercises.length);
     const selectedExercise = allExercises[randomIndex];
 
-    return { exercise: selectedExercise };
+    const viewer = await serverAuth();
+    const [mergedExercise] = await mergeFullVideoUrlsForUser(viewer?.id, [selectedExercise]);
+
+    return { exercise: mergedExercise };
   } catch (error) {
     console.error("Error shuffling exercise:", error);
     return { serverError: "Failed to shuffle exercise" };

@@ -192,7 +192,7 @@ export function ProgramDetailPage({ program, isAuthenticated }: ProgramDetailPag
           {/* Mascot Emoji */}
           <div className="absolute top-4 right-4 w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/30 flex items-center justify-center">
             <Image
-              alt="Mascotte WorkoutCool"
+              alt={t("programs.img_mascot_swag")}
               className="w-12 h-12 object-contain"
               height={48}
               src="/images/emojis/WorkoutCoolSwag.png"
@@ -224,7 +224,7 @@ export function ProgramDetailPage({ program, isAuthenticated }: ProgramDetailPag
         <div className="px-0 sm:px-4 py-4">
           <div className="tabs tabs-lift" role="tablist">
             <button
-              aria-label="À propos"
+              aria-label={t("programs.about")}
               className={`tab ${tab === "about" ? "tab-active" : ""}`}
               onClick={() => setTab("about")}
               type="button"
@@ -280,7 +280,7 @@ export function ProgramDetailPage({ program, isAuthenticated }: ProgramDetailPag
                     <div className="flex items-center gap-3">
                       <div className="flex -space-x-2">
                         <Image
-                          alt="Communauté"
+                          alt={t("programs.img_community")}
                           className="w-10 h-10 object-contain"
                           height={40}
                           src="/images/emojis/WorkoutCoolHappy.png"
@@ -386,7 +386,7 @@ export function ProgramDetailPage({ program, isAuthenticated }: ProgramDetailPag
                             />
                             <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center">
                               <Image
-                                alt="Coachs"
+                                alt={t("programs.img_coach_love")}
                                 className="w-6 h-6 object-contain"
                                 height={24}
                                 src="/images/emojis/WorkoutCoolLove.png"
@@ -555,7 +555,7 @@ export function ProgramDetailPage({ program, isAuthenticated }: ProgramDetailPag
             }
             onClick={handleCTAClick}
           >
-            <Image alt="Rejoindre" className="w-6 h-6 object-contain" height={24} src="/images/emojis/WorkoutCoolSwag.png" width={24} />
+            <Image alt={t("programs.img_join_cta")} className="w-6 h-6 object-contain" height={24} src="/images/emojis/WorkoutCoolSwag.png" width={24} />
             <div className="flex flex-col items-center">
               <span className="text-base">{isAuthenticated && hasJoinedProgram ? t("programs.continue") : t("programs.join_cta")}</span>
             </div>

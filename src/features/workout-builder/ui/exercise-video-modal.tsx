@@ -1,13 +1,20 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BarChart3, Crown, Lock, Play, TrendingUp, Zap } from "lucide-react";
+import { BarChart3, Crown, Loader2, Lock, Play, TrendingUp, Zap } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useCurrentLocale, useI18n } from "locales/client";
 import { ExerciseAttributeNameEnum, ExerciseAttributeValueEnum } from "@prisma/client";
 
 import type { ExerciseWithAttributes } from "@/entities/exercise/types/exercise.types";
 
+import { useIsAdmin, useSession } from "@/features/auth/lib/auth-client";
+import { updateExerciseBilibiliVideoAction } from "@/features/workout-builder/actions/update-exercise-bilibili-video.action";
+import { upsertUserExerciseVideoOverrideAction } from "@/features/workout-builder/actions/upsert-user-exercise-video-override.action";
 import { getYouTubeEmbedUrl } from "@/shared/lib/youtube";
 import { useIsPremium } from "@/shared/lib/premium/use-premium";
+import { getExerciseDescription, getExerciseIntroduction, getExerciseName } from "@/shared/lib/exercise-i18n";
 import { getAttributeValueLabel } from "@/shared/lib/attribute-value-translation";
 import { StatisticsTimeframe } from "@/shared/constants/statistics";
 import { ExerciseCharts } from "@/features/statistics/components/ExerciseStatisticsTab";
@@ -15,38 +22,93 @@ import { TimeframeSelector } from "@/features/statistics/components";
 import { getExerciseAttributesValueOf } from "@/entities/exercise/shared/muscles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { brandedToast } from "@/components/ui/toast";
+import { getBilibiliEmbedUrl } from "@/shared/lib/bilibili";
 
 interface ExerciseVideoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercise: ExerciseWithAttributes;
   defaultTab?: "video" | "statistics";
+  /** Called after saving a video URL (personal override or global default) so parents can refresh merged data. */
+  onExerciseVideoUrlSaved?: (exerciseId: string, fullVideoUrl: string) => void;
 }
 
-export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = "video" }: ExerciseVideoModalProps) {
+export function ExerciseVideoModal({
+  open,
+  onOpenChange,
+  exercise,
+  defaultTab = "video",
+  onExerciseVideoUrlSaved,
+}: ExerciseVideoModalProps) {
   const t = useI18n();
   const locale = useCurrentLocale();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [selectedTimeframe, setSelectedTimeframe] = useState<StatisticsTimeframe>("8weeks");
   const isPremium = useIsPremium();
+  const isAdmin = useIsAdmin();
+  const { data: sessionData } = useSession();
+  const isLoggedIn = Boolean(sessionData?.user);
+
+  const [paste, setPaste] = useState("");
+  const [displayVideoUrl, setDisplayVideoUrl] = useState<string | null>(exercise.fullVideoUrl ?? null);
+
+  const savePersonalVideo = useAction(upsertUserExerciseVideoOverrideAction, {
+    onSuccess: ({ data }) => {
+      if (data?.fullVideoUrl) {
+        setDisplayVideoUrl(data.fullVideoUrl);
+        setPaste("");
+        onExerciseVideoUrlSaved?.(exercise.id, data.fullVideoUrl);
+        brandedToast({
+          title: t("workout_builder.exercise.bilibili_saved_personal" as keyof typeof t),
+          variant: "success",
+        });
+      }
+    },
+    onError: ({ error }) => {
+      const message = typeof error.serverError === "string" ? error.serverError : t("workout_builder.exercise.bilibili_error" as keyof typeof t);
+      brandedToast({ title: message, variant: "error" });
+    },
+  });
+
+  const saveGlobalVideo = useAction(updateExerciseBilibiliVideoAction, {
+    onSuccess: ({ data }) => {
+      if (data?.fullVideoUrl) {
+        setPaste("");
+        onExerciseVideoUrlSaved?.(exercise.id, data.fullVideoUrl);
+        brandedToast({
+          title: t("workout_builder.exercise.bilibili_saved_global" as keyof typeof t),
+          variant: "success",
+        });
+      }
+    },
+    onError: ({ error }) => {
+      const message = typeof error.serverError === "string" ? error.serverError : t("workout_builder.exercise.bilibili_error" as keyof typeof t);
+      brandedToast({ title: message, variant: "error" });
+    },
+  });
 
   useEffect(() => {
-    if (open) setActiveTab(defaultTab);
-  }, [open, defaultTab]);
+    if (open) {
+      setActiveTab(defaultTab);
+      setPaste("");
+      setDisplayVideoUrl(exercise.fullVideoUrl ?? null);
+    }
+  }, [open, defaultTab, exercise.id, exercise.fullVideoUrl]);
 
-  const title = locale === "fr" ? exercise.name : exercise.nameEn || exercise.name;
-  const introduction = locale === "fr" ? exercise.introduction : exercise.introductionEn || exercise.introduction;
-  const description = locale === "fr" ? exercise.description : exercise.descriptionEn || exercise.description;
-  const videoUrl = exercise.fullVideoUrl;
-  const youTubeEmbedUrl = getYouTubeEmbedUrl(videoUrl ?? "");
-
+  const title = getExerciseName(exercise, locale);
+  const introduction = getExerciseIntroduction(exercise, locale);
+  const description = getExerciseDescription(exercise, locale);
+  const bilibiliEmbedUrl = getBilibiliEmbedUrl(displayVideoUrl ?? "");
+  // const youTubeEmbedUrl = getYouTubeEmbedUrl(displayVideoUrl ?? "");
   const type = getExerciseAttributesValueOf(exercise, ExerciseAttributeNameEnum.TYPE);
   const pMuscles = getExerciseAttributesValueOf(exercise, ExerciseAttributeNameEnum.PRIMARY_MUSCLE);
   const sMuscles = getExerciseAttributesValueOf(exercise, ExerciseAttributeNameEnum.SECONDARY_MUSCLE);
   const equipment = getExerciseAttributesValueOf(exercise, ExerciseAttributeNameEnum.EQUIPMENT);
   const mechanics = getExerciseAttributesValueOf(exercise, ExerciseAttributeNameEnum.MECHANICS_TYPE);
 
-  // Couleurs pour les badges
   const badgeColors: Record<string, string> = {
     TYPE: "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-100",
     PRIMARY_MUSCLE: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
@@ -63,6 +125,14 @@ export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = 
     );
   };
 
+  const handleSavePersonalBilibili = () => {
+    savePersonalVideo.execute({ exerciseId: exercise.id, paste });
+  };
+
+  const handleSaveGlobalBilibili = () => {
+    saveGlobalVideo.execute({ exerciseId: exercise.id, paste });
+  };
+
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-2xl p-0 max-h-[80vh]">
@@ -70,7 +140,7 @@ export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = 
           <DialogTitle className="text-lg md:text-xl font-bold flex flex-col gap-2">
             <span className="text-slate-700 dark:text-slate-200 pr-10 text-left">{title}</span>
             <div className="flex flex-wrap gap-2 mt-2">
-              {type.map((type) => renderBadge(type, badgeColors.TYPE))}
+              {type.map((typeValue) => renderBadge(typeValue, badgeColors.TYPE))}
               {pMuscles.map((pMuscle) => renderBadge(pMuscle, badgeColors.PRIMARY_MUSCLE))}
               {sMuscles.map((sMuscle) => renderBadge(sMuscle, badgeColors.SECONDARY_MUSCLE))}
               {equipment.map((eq) => renderBadge(eq, badgeColors.EQUIPMENT))}
@@ -92,7 +162,6 @@ export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = 
           </TabsList>
 
           <TabsContent className="mt-0" value="video">
-            {/* Introduction */}
             {introduction && (
               <div
                 className="px-6 pt-2 pb-2 text-slate-700 dark:text-slate-200 text-sm md:text-base prose dark:prose-invert max-w-none"
@@ -100,27 +169,96 @@ export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = 
               />
             )}
 
-            {/* Vidéo */}
+            {(isLoggedIn || isAdmin) && (
+              <div className="mx-4 mt-3 mb-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 space-y-3">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {t("workout_builder.exercise.bilibili_paste_section_title" as keyof typeof t)}
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {t("workout_builder.exercise.bilibili_paste_section_description" as keyof typeof t)}
+                </p>
+                <Textarea
+                  className="min-h-[100px] font-mono text-xs"
+                  onChange={(e) => setPaste(e.target.value)}
+                  placeholder={t("workout_builder.exercise.bilibili_paste_placeholder" as keyof typeof t)}
+                  value={paste}
+                />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {isLoggedIn && (
+                    <Button
+                      className="w-full sm:flex-1"
+                      disabled={!paste.trim() || savePersonalVideo.isExecuting || saveGlobalVideo.isExecuting}
+                      onClick={handleSavePersonalBilibili}
+                      size="small"
+                      type="button"
+                      variant="default"
+                    >
+                      {savePersonalVideo.isExecuting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          {t("workout_builder.exercise.bilibili_saving_mine" as keyof typeof t)}
+                        </>
+                      ) : (
+                        t("workout_builder.exercise.bilibili_save_mine" as keyof typeof t)
+                      )}
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      className="w-full sm:flex-1"
+                      disabled={!paste.trim() || savePersonalVideo.isExecuting || saveGlobalVideo.isExecuting}
+                      onClick={handleSaveGlobalBilibili}
+                      size="small"
+                      type="button"
+                      variant="outline"
+                    >
+                      {saveGlobalVideo.isExecuting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          {t("workout_builder.exercise.bilibili_saving_global" as keyof typeof t)}
+                        </>
+                      ) : (
+                        t("workout_builder.exercise.bilibili_save_global" as keyof typeof t)
+                      )}
+                    </Button>
+                  )}
+                </div>
+                {isAdmin && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {t("workout_builder.exercise.bilibili_global_hint" as keyof typeof t)}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="w-full aspect-video bg-black flex items-center justify-center">
-              {videoUrl ? (
-                youTubeEmbedUrl ? (
-                  <iframe
-                    allow="autoplay; encrypted-media"
-                    allowFullScreen
-                    className="w-full h-full border-0"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    src={youTubeEmbedUrl}
-                    title={title ?? ""}
-                  />
-                ) : (
-                  <video autoPlay className="w-full h-full object-contain bg-black" controls poster="" src={videoUrl} />
-                )
+              {bilibiliEmbedUrl ? (
+                <iframe
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  src={bilibiliEmbedUrl}
+                  title={title ?? "Bilibili"}
+                />
+              ) 
+              // : youTubeEmbedUrl ? (
+              //   <iframe
+              //     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              //     allowFullScreen
+              //     className="w-full h-full border-0"
+              //     referrerPolicy="strict-origin-when-cross-origin"
+              //     src={youTubeEmbedUrl}
+              //     title={title ?? "YouTube"}
+              //   />
+              // ) 
+              : displayVideoUrl ? (
+                <video autoPlay className="w-full h-full object-contain bg-black" controls poster="" src={displayVideoUrl} />
               ) : (
                 <div className="text-white text-center p-8">{t("workout_builder.exercise.no_video_available")}</div>
               )}
             </div>
 
-            {/* Instructions (description) */}
             {description && (
               <div
                 className="px-6 pt-4 pb-6 text-slate-700 dark:text-slate-200 text-sm md:text-base prose dark:prose-invert max-w-none border-t border-slate-200 dark:border-slate-800 mt-2"
@@ -131,7 +269,6 @@ export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = 
 
           <TabsContent className="mt-0" value="statistics">
             <div className="space-y-5 px-3 md:px-6 pt-4 pb-6">
-              {/* Header — title + timeframe aligned */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
@@ -144,15 +281,12 @@ export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = 
                 <TimeframeSelector className="shrink-0" onSelect={setSelectedTimeframe} selected={selectedTimeframe} />
               </div>
 
-              {/* Charts in card */}
               <div className="rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/30 p-3 md:p-4">
                 <ExerciseCharts exerciseId={exercise.id} timeframe={selectedTimeframe} />
               </div>
 
-              {/* Premium teaser — Blurred advanced insights (loss aversion + Zeigarnik effect) */}
               {!isPremium && (
                 <div className="relative rounded-xl border border-dashed border-amber-300 dark:border-amber-700/50 overflow-hidden">
-                  {/* Blurred fake insights */}
                   <div className="select-none pointer-events-none blur-[6px] opacity-50 p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -180,7 +314,6 @@ export function ExerciseVideoModal({ open, onOpenChange, exercise, defaultTab = 
                     </div>
                   </div>
 
-                  {/* Overlay CTA */}
                   <div className="absolute inset-0 flex items-center justify-center bg-white/30 dark:bg-slate-900/30">
                     <Link
                       className=" flex flex-col items-center gap-2.5 px-6 py-4 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-amber-200 dark:border-amber-800 shadow-xl shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-200 hover:scale-[1.02]"

@@ -1,6 +1,8 @@
 Generate 50 unique fitness exercises in CSV format with the following columns:
 
-`id,name,name_en,description,description_en,full_video_url,full_video_image_url,introduction,introduction_en,slug,slug_en,attribute_name,attribute_value`
+`id,name,name_en,name_zh_cn,description,description_en,description_zh_cn,full_video_url,full_video_image_url,introduction,introduction_en,introduction_zh_cn,slug,slug_en,slug_zh_cn,attribute_name,attribute_value`
+
+Optional columns (leave empty if unused): `name_zh_cn`, `description_zh_cn`, `introduction_zh_cn`, `slug_zh_cn`.
 
 ## Requirements:
 

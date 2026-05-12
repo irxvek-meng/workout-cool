@@ -2,11 +2,13 @@
 
 import { z } from "zod";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ExerciseAttributeValueEnum } from "@prisma/client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useI18n } from "locales/client";
 
 import { generateSlugsForAllLanguages } from "@/shared/lib/slug";
+import { ATTRIBUTE_VALUE_TRANSLATION_KEYS } from "@/shared/lib/attribute-value-translation";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -15,28 +17,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+import { createSessionFormSchema } from "../lib/program-builder-zod";
+import { ADMIN_PROGRAM_EQUIPMENT_VALUES } from "../lib/admin-equipment-options";
 import { SessionWithExercises } from "../types/program.types";
 import { updateSession } from "../actions/update-session.action";
 
-const sessionSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  titleEn: z.string().min(1, "Le titre en anglais est requis"),
-  titleEs: z.string().min(1, "Le titre en espagnol est requis"),
-  titlePt: z.string().min(1, "Le titre en portugais est requis"),
-  titleRu: z.string().min(1, "Le titre en russe est requis"),
-  titleZhCn: z.string().min(1, "Le titre en chinois est requis"),
-  description: z.string().min(1, "La description est requise"),
-  descriptionEn: z.string().min(1, "La description en anglais est requise"),
-  descriptionEs: z.string().min(1, "La description en espagnol est requise"),
-  descriptionPt: z.string().min(1, "La description en portugais est requise"),
-  descriptionRu: z.string().min(1, "La description en russe est requise"),
-  descriptionZhCn: z.string().min(1, "La description en chinois est requise"),
-  estimatedMinutes: z.number().min(5, "Au moins 5 minutes"),
-  isPremium: z.boolean(),
-  equipment: z.array(z.nativeEnum(ExerciseAttributeValueEnum)),
-});
-
-type SessionFormData = z.infer<typeof sessionSchema>;
+type SessionFormData = z.infer<ReturnType<typeof createSessionFormSchema>>;
 
 interface EditSessionModalProps {
   open: boolean;
@@ -44,17 +30,9 @@ interface EditSessionModalProps {
   session: SessionWithExercises;
 }
 
-const EQUIPMENT_OPTIONS = [
-  { value: ExerciseAttributeValueEnum.BODY_ONLY, label: "Poids du corps" },
-  { value: ExerciseAttributeValueEnum.DUMBBELL, label: "Haltères" },
-  { value: ExerciseAttributeValueEnum.BARBELL, label: "Barre" },
-  { value: ExerciseAttributeValueEnum.KETTLEBELLS, label: "Kettlebells" },
-  { value: ExerciseAttributeValueEnum.BANDS, label: "Élastiques" },
-  { value: ExerciseAttributeValueEnum.MACHINE, label: "Machines" },
-  { value: ExerciseAttributeValueEnum.CABLE, label: "Câbles" },
-];
-
 export function EditSessionModal({ open, onOpenChange, session }: EditSessionModalProps) {
+  const t = useI18n();
+  const sessionSchema = useMemo(() => createSessionFormSchema(t as (key: string) => string), [t]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("fr");
   const [selectedEquipment, setSelectedEquipment] = useState<ExerciseAttributeValueEnum[]>(session.equipment);
@@ -118,7 +96,7 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
       window.location.reload(); // Refresh to show updated session
     } catch (error) {
       console.error("Error updating session:", error);
-      alert("Erreur lors de la mise à jour de la séance");
+      alert(t("admin.program_builder.err_update_session"));
     } finally {
       setIsLoading(false);
     }
@@ -135,29 +113,29 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
     <Dialog onOpenChange={handleClose} open={open}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Éditer la séance</DialogTitle>
+          <DialogTitle>{t("admin.program_builder.session_modal_edit_title")}</DialogTitle>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           {/* Language Tabs */}
           <div className="tabs tabs-boxed">
             <button className={`tab ${activeTab === "fr" ? "tab-active" : ""}`} onClick={() => setActiveTab("fr")} type="button">
-              🇫🇷 FR
+              {t("admin.program_builder.tab_fr")}
             </button>
             <button className={`tab ${activeTab === "en" ? "tab-active" : ""}`} onClick={() => setActiveTab("en")} type="button">
-              🇺🇸 EN
+              {t("admin.program_builder.tab_en")}
             </button>
             <button className={`tab ${activeTab === "es" ? "tab-active" : ""}`} onClick={() => setActiveTab("es")} type="button">
-              🇪🇸 ES
+              {t("admin.program_builder.tab_es")}
             </button>
             <button className={`tab ${activeTab === "pt" ? "tab-active" : ""}`} onClick={() => setActiveTab("pt")} type="button">
-              🇵🇹 PT
+              {t("admin.program_builder.tab_pt")}
             </button>
             <button className={`tab ${activeTab === "ru" ? "tab-active" : ""}`} onClick={() => setActiveTab("ru")} type="button">
-              🇷🇺 RU
+              {t("admin.program_builder.tab_ru")}
             </button>
             <button className={`tab ${activeTab === "zh" ? "tab-active" : ""}`} onClick={() => setActiveTab("zh")} type="button">
-              🇨🇳 ZH
+              {t("admin.program_builder.tab_zh")}
             </button>
           </div>
 
@@ -165,12 +143,12 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
           {activeTab === "fr" && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-title">Titre (Français)</Label>
+                <Label htmlFor="edit-title">{t("admin.program_builder.label_title_fr")}</Label>
                 <Input id="edit-title" {...register("title")} />
                 {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>}
               </div>
               <div>
-                <Label htmlFor="edit-description">Description (Français)</Label>
+                <Label htmlFor="edit-description">{t("admin.program_builder.label_description_fr")}</Label>
                 <Textarea id="edit-description" {...register("description")} rows={3} />
                 {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>}
               </div>
@@ -181,12 +159,12 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
           {activeTab === "en" && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-titleEn">Title (English)</Label>
+                <Label htmlFor="edit-titleEn">{t("admin.program_builder.label_title_en")}</Label>
                 <Input id="edit-titleEn" {...register("titleEn")} />
                 {errors.titleEn && <p className="text-sm text-red-500 mt-1">{errors.titleEn.message}</p>}
               </div>
               <div>
-                <Label htmlFor="edit-descriptionEn">Description (English)</Label>
+                <Label htmlFor="edit-descriptionEn">{t("admin.program_builder.label_description_en")}</Label>
                 <Textarea id="edit-descriptionEn" {...register("descriptionEn")} rows={3} />
                 {errors.descriptionEn && <p className="text-sm text-red-500 mt-1">{errors.descriptionEn.message}</p>}
               </div>
@@ -197,12 +175,12 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
           {activeTab === "es" && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-titleEs">Título (Español)</Label>
+                <Label htmlFor="edit-titleEs">{t("admin.program_builder.label_title_es")}</Label>
                 <Input id="edit-titleEs" {...register("titleEs")} />
                 {errors.titleEs && <p className="text-sm text-red-500 mt-1">{errors.titleEs.message}</p>}
               </div>
               <div>
-                <Label htmlFor="edit-descriptionEs">Descripción (Español)</Label>
+                <Label htmlFor="edit-descriptionEs">{t("admin.program_builder.label_description_es")}</Label>
                 <Textarea id="edit-descriptionEs" {...register("descriptionEs")} rows={3} />
                 {errors.descriptionEs && <p className="text-sm text-red-500 mt-1">{errors.descriptionEs.message}</p>}
               </div>
@@ -213,12 +191,12 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
           {activeTab === "pt" && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-titlePt">Título (Português)</Label>
+                <Label htmlFor="edit-titlePt">{t("admin.program_builder.label_title_pt")}</Label>
                 <Input id="edit-titlePt" {...register("titlePt")} />
                 {errors.titlePt && <p className="text-sm text-red-500 mt-1">{errors.titlePt.message}</p>}
               </div>
               <div>
-                <Label htmlFor="edit-descriptionPt">Descrição (Português)</Label>
+                <Label htmlFor="edit-descriptionPt">{t("admin.program_builder.label_description_pt")}</Label>
                 <Textarea id="edit-descriptionPt" {...register("descriptionPt")} rows={3} />
                 {errors.descriptionPt && <p className="text-sm text-red-500 mt-1">{errors.descriptionPt.message}</p>}
               </div>
@@ -229,12 +207,12 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
           {activeTab === "ru" && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-titleRu">Название (Русский)</Label>
+                <Label htmlFor="edit-titleRu">{t("admin.program_builder.label_title_ru")}</Label>
                 <Input id="edit-titleRu" {...register("titleRu")} />
                 {errors.titleRu && <p className="text-sm text-red-500 mt-1">{errors.titleRu.message}</p>}
               </div>
               <div>
-                <Label htmlFor="edit-descriptionRu">Описание (Русский)</Label>
+                <Label htmlFor="edit-descriptionRu">{t("admin.program_builder.label_description_ru")}</Label>
                 <Textarea id="edit-descriptionRu" {...register("descriptionRu")} rows={3} />
                 {errors.descriptionRu && <p className="text-sm text-red-500 mt-1">{errors.descriptionRu.message}</p>}
               </div>
@@ -245,12 +223,12 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
           {activeTab === "zh" && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-titleZhCn">标题 (中文)</Label>
+                <Label htmlFor="edit-titleZhCn">{t("admin.program_builder.label_title_zh")}</Label>
                 <Input id="edit-titleZhCn" {...register("titleZhCn")} />
                 {errors.titleZhCn && <p className="text-sm text-red-500 mt-1">{errors.titleZhCn.message}</p>}
               </div>
               <div>
-                <Label htmlFor="edit-descriptionZhCn">描述 (中文)</Label>
+                <Label htmlFor="edit-descriptionZhCn">{t("admin.program_builder.label_description_zh")}</Label>
                 <Textarea id="edit-descriptionZhCn" {...register("descriptionZhCn")} rows={3} />
                 {errors.descriptionZhCn && <p className="text-sm text-red-500 mt-1">{errors.descriptionZhCn.message}</p>}
               </div>
@@ -259,7 +237,7 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="edit-estimatedMinutes">Durée estimée (minutes)</Label>
+              <Label htmlFor="edit-estimatedMinutes">{t("admin.program_builder.session_estimated_minutes")}</Label>
               <Input id="edit-estimatedMinutes" min="5" type="number" {...register("estimatedMinutes", { valueAsNumber: true })} />
               {errors.estimatedMinutes && <p className="text-sm text-red-500 mt-1">{errors.estimatedMinutes.message}</p>}
             </div>
@@ -269,21 +247,21 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
                 id="edit-isPremium"
                 onCheckedChange={(checked) => setValue("isPremium", checked)}
               />
-              <Label htmlFor="edit-isPremium">Séance premium</Label>
+              <Label htmlFor="edit-isPremium">{t("admin.program_builder.session_premium_label")}</Label>
             </div>
           </div>
 
           <div>
-            <Label>Équipement requis</Label>
+            <Label>{t("admin.program_builder.session_equipment_label")}</Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {EQUIPMENT_OPTIONS.map((option) => (
+              {ADMIN_PROGRAM_EQUIPMENT_VALUES.map((value) => (
                 <Badge
                   className="cursor-pointer"
-                  key={option.value}
-                  onClick={() => toggleEquipment(option.value)}
-                  variant={selectedEquipment.includes(option.value) ? "default" : "outline"}
+                  key={value}
+                  onClick={() => toggleEquipment(value)}
+                  variant={selectedEquipment.includes(value) ? "default" : "outline"}
                 >
-                  {option.label}
+                  {t(ATTRIBUTE_VALUE_TRANSLATION_KEYS[value] as keyof typeof t)}
                 </Badge>
               ))}
             </div>
@@ -291,10 +269,10 @@ export function EditSessionModal({ open, onOpenChange, session }: EditSessionMod
 
           <div className="flex justify-end gap-2 pt-4">
             <Button onClick={handleClose} type="button" variant="outline">
-              Annuler
+              {t("admin.program_builder.common_cancel")}
             </Button>
             <Button disabled={isLoading} type="submit">
-              {isLoading ? "Mise à jour..." : "Mettre à jour"}
+              {isLoading ? t("admin.program_builder.session_submit_updating") : t("admin.program_builder.session_submit_edit")}
             </Button>
           </div>
         </form>

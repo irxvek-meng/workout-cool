@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+import { headers as getRequestHeaders } from "next/headers";
 
+import { auth } from "@/features/auth/lib/better-auth";
 import { prisma } from "@/shared/lib/prisma";
+import { mergeFullVideoUrlsForUser } from "@/shared/lib/exercise-video-override-merge";
 
 const paginationSchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -53,7 +56,11 @@ export async function GET(request: NextRequest) {
     // Search by exercise name
     if (search) {
       conditions.push({
-        OR: [{ name: { contains: search, mode: "insensitive" } }, { nameEn: { contains: search, mode: "insensitive" } }],
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { nameEn: { contains: search, mode: "insensitive" } },
+          { nameZhCn: { contains: search, mode: "insensitive" } },
+        ],
       });
     }
 
@@ -102,6 +109,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         nameEn: true,
+        nameZhCn: true,
         fullVideoUrl: true,
         fullVideoImageUrl: true,
         attributes: {
@@ -126,8 +134,11 @@ export async function GET(request: NextRequest) {
     const hasNextPage = page < totalPages;
     const hasPreviousPage = page > 1;
 
+    const session = await auth.api.getSession({ headers: await getRequestHeaders() });
+    const mergedExercises = session?.user?.id ? await mergeFullVideoUrlsForUser(session.user.id, exercises) : exercises;
+
     const response = {
-      data: exercises,
+      data: mergedExercises,
       pagination: {
         page,
         limit,
@@ -139,10 +150,10 @@ export async function GET(request: NextRequest) {
     };
 
     // Add cache headers - 5 minutes cache
-    const headers = new Headers();
-    headers.set("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
+    const responseHeaders = new Headers();
+    responseHeaders.set("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
 
-    return NextResponse.json(response, { headers });
+    return NextResponse.json(response, { headers: responseHeaders });
   } catch (error) {
     console.error("Error fetching exercises:", error);
     return NextResponse.json(

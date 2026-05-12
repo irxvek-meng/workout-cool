@@ -1,14 +1,17 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { X, Play } from "lucide-react";
+import { useCurrentLocale, useI18n } from "locales/client";
 import { ExerciseAttributeNameEnum } from "@prisma/client";
 
-import { useCurrentLocale, useI18n } from "locales/client";
+
+import type { ExerciseWithAttributes } from "../types";
+
+import { getExerciseDescription, getExerciseName } from "@/shared/lib/exercise-i18n";
 import { getExerciseAttributesValueOf } from "@/entities/exercise/shared/muscles";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-import type { ExerciseWithAttributes } from "../types";
 
 interface ExercisePickModalProps {
   exercise: ExerciseWithAttributes | null;
@@ -48,8 +51,8 @@ export function ExercisePickModal({ exercise, muscle, isOpen, onClose, onConfirm
 
   if (!exercise) return null;
 
-  const exerciseName = locale === "fr" ? exercise.name : exercise.nameEn;
-  const exerciseDescription = locale === "fr" ? exercise.description : exercise.descriptionEn;
+  const exerciseName = getExerciseName(exercise, locale);
+  const exerciseDescription = getExerciseDescription(exercise, locale);
 
   // Extraire les attributs utiles
   const equipmentAttributes = getExerciseAttributesValueOf(exercise, ExerciseAttributeNameEnum.EQUIPMENT);

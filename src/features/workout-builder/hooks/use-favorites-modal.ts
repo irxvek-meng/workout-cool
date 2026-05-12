@@ -8,7 +8,8 @@ import { useFavoriteExercisesService } from "./use-favorite-exercises.service";
 interface ExerciseWithAttributes {
   id: string;
   name: string;
-  nameEn: string;
+  nameEn: string | null;
+  nameZhCn?: string | null;
   fullVideoImageUrl: string | null;
   attributes: Array<{
     attributeName: { name: string };

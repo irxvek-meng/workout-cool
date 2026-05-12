@@ -37,6 +37,11 @@ export function RewardedAdGate({ onRewardGranted, children }: RewardedAdGateProp
     setOpen(true);
   }, [isPremium, onRewardGranted]);
 
+  const handleContinueWithoutAd = useCallback(() => {
+    setOpen(false);
+    onRewardGranted();
+  }, [onRewardGranted]);
+
   const handleWatchAd = useCallback(() => {
     if (!window.ezRewardedAds?.ready) {
       setOpen(false);
@@ -53,6 +58,8 @@ export function RewardedAdGate({ onRewardGranted, children }: RewardedAdGateProp
       if (result.reward || !result.status) {
         onRewardGranted();
       }
+      // 旧：调试日志曾写在此回调外，result 不在作用域；如需调试请保留在回调内
+      // console.log("🔍 Result:", result);
     });
   }, [onRewardGranted]);
 
@@ -82,6 +89,15 @@ export function RewardedAdGate({ onRewardGranted, children }: RewardedAdGateProp
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Tv className="w-5 h-5" />}
               {t("ads.rewarded_watch_ad")}
+            </button>
+
+            <button
+              className="w-full text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 py-2 rounded-lg transition-colors disabled:opacity-50"
+              disabled={loading}
+              onClick={handleContinueWithoutAd}
+              type="button"
+            >
+              {t("ads.rewarded_continue_without_ad")}
             </button>
 
             {/* Divider */}

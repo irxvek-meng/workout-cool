@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Clock, ChevronDown, ChevronRight, Edit } from "lucide-react";
+import { useI18n } from "locales/client";
 
 import { WeekWithSessions } from "../types/program.types";
 import { SessionCard } from "./session-card";
@@ -13,6 +14,7 @@ interface WeekCardProps {
 }
 
 export function WeekCard({ week }: WeekCardProps) {
+  const t = useI18n();
   const [isExpanded, setIsExpanded] = useState(true);
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
   const [isEditWeekModalOpen, setIsEditWeekModalOpen] = useState(false);
@@ -27,22 +29,18 @@ export function WeekCard({ week }: WeekCardProps) {
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
             <div>
-              <h3 className="text-lg font-bold">
-                Semaine {week.weekNumber}: {week.title}
-              </h3>
+              <h3 className="text-lg font-bold">{t("admin.program_builder.week_card_week_title", { n: week.weekNumber, title: week.title })}</h3>
               <p className="text-sm text-base-content/60 mt-1">{week.description}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="badge badge-outline">
-              {week.sessions.length} séance{week.sessions.length !== 1 ? "s" : ""}
-            </div>
-            <button className="btn btn-sm btn-ghost" onClick={() => setIsEditWeekModalOpen(true)} title="Éditer la semaine">
+            <div className="badge badge-outline">{t("admin.program_builder.week_card_sessions_badge", { count: week.sessions.length })}</div>
+            <button className="btn btn-sm btn-ghost" onClick={() => setIsEditWeekModalOpen(true)} title={t("admin.program_builder.week_card_edit_week")}>
               <Edit className="h-4 w-4" />
             </button>
             <button className="btn btn-sm btn-primary" onClick={() => setIsAddSessionModalOpen(true)}>
               <Plus className="h-4 w-4 mr-1" />
-              Séance
+              {t("admin.program_builder.week_card_add_session")}
             </button>
           </div>
         </div>
@@ -55,10 +53,10 @@ export function WeekCard({ week }: WeekCardProps) {
           {week.sessions.length === 0 ? (
             <div className="text-center py-8 border-2 border-dashed border-base-300 rounded-lg">
               <Clock className="h-8 w-8 text-base-content/60 mx-auto mb-2" />
-              <p className="text-base-content/60 mb-3">Aucune séance dans cette semaine</p>
+              <p className="text-base-content/60 mb-3">{t("admin.program_builder.week_card_no_sessions")}</p>
               <button className="btn btn-sm btn-primary" onClick={() => setIsAddSessionModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" />
-                Ajouter la première séance
+                {t("admin.program_builder.week_card_add_first_session")}
               </button>
             </div>
           ) : (

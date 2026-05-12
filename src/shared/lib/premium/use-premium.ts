@@ -13,14 +13,14 @@ export function usePremiumStatus() {
     queryKey: ["premium-status", session?.user?.id],
     queryFn: async (): Promise<PremiumStatus> => {
       if (!session?.user?.id) {
-        return { isPremium: false };
+        return { isPremium: true };
       }
-
+      
       const response = await fetch("/api/premium/status");
       if (!response.ok) {
         throw new Error("Failed to fetch premium status");
       }
-
+     
       return response.json();
     },
     enabled: !!session?.user?.id,
@@ -55,5 +55,5 @@ export function useSubscription() {
 // Simple boolean check - most common use case
 export function useIsPremium(): boolean {
   const { data: premiumStatus } = usePremiumStatus();
-  return premiumStatus?.isPremium ?? false;
+  return   premiumStatus?.isPremium ?? false;
 }

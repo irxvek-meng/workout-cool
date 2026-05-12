@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Dumbbell, Grid, Hammer, Crown, Activity, Trophy } from "lucide-react";
+import { Dumbbell, Grid, Hammer, Crown, Activity, Trophy, Library } from "lucide-react";
 import { useCurrentLocale, useI18n } from "locales/client";
 
 import { cn } from "@/shared/lib/utils";

@@ -1,8 +1,9 @@
 "use client";
 
 import { z } from "zod";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
+import { useI18n } from "locales/client";
 
 import { addWeekToProgram } from "../actions/add-week.action";
 
@@ -32,22 +33,34 @@ interface AddWeekModalProps {
 }
 
 export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: AddWeekModalProps) {
+  const t = useI18n();
+  const emptyWeek = useMemo<WeekFormData>(
+    () => ({
+      title: t("admin.program_builder.default_week_title_fr", { n: nextWeekNumber }),
+      titleEn: t("admin.program_builder.default_week_title_en", { n: nextWeekNumber }),
+      titleEs: t("admin.program_builder.default_week_title_es", { n: nextWeekNumber }),
+      titlePt: t("admin.program_builder.default_week_title_pt", { n: nextWeekNumber }),
+      titleRu: t("admin.program_builder.default_week_title_ru", { n: nextWeekNumber }),
+      titleZhCn: t("admin.program_builder.default_week_title_zh", { n: nextWeekNumber }),
+      description: "",
+      descriptionEn: "",
+      descriptionEs: "",
+      descriptionPt: "",
+      descriptionRu: "",
+      descriptionZhCn: "",
+    }),
+    [t, nextWeekNumber],
+  );
+
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("fr");
-  const [formData, setFormData] = useState<WeekFormData>({
-    title: `Semaine ${nextWeekNumber}`,
-    titleEn: `Week ${nextWeekNumber}`,
-    titleEs: `Semana ${nextWeekNumber}`,
-    titlePt: `Semana ${nextWeekNumber}`,
-    titleRu: `Неделя ${nextWeekNumber}`,
-    titleZhCn: `第${nextWeekNumber}周`,
-    description: "",
-    descriptionEn: "",
-    descriptionEs: "",
-    descriptionPt: "",
-    descriptionRu: "",
-    descriptionZhCn: "",
-  });
+  const [formData, setFormData] = useState<WeekFormData>(emptyWeek);
+
+  useEffect(() => {
+    if (open) {
+      setFormData(emptyWeek);
+    }
+  }, [open, emptyWeek]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +76,7 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
       window.location.reload(); // Refresh to show new week
     } catch (error) {
       console.error("Error adding week:", error);
-      alert("Erreur lors de l'ajout de la semaine");
+      alert(t("admin.program_builder.err_add_week"));
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +93,7 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
     <div className="modal modal-open modal-middle !mt-0">
       <div className="modal-box max-w-4xl overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="font-bold text-lg">Ajouter une semaine</h3>
+          <h3 className="font-bold text-lg">{t("admin.program_builder.week_modal_add_title")}</h3>
           <button className="btn btn-sm btn-circle btn-ghost" onClick={handleClose}>
             <X className="h-4 w-4" />
           </button>
@@ -91,22 +104,22 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
             {/* Language Tabs */}
             <div className="tabs tabs-boxed">
               <button className={`tab ${activeTab === "fr" ? "tab-active" : ""}`} onClick={() => setActiveTab("fr")} type="button">
-                🇫🇷 FR
+                {t("admin.program_builder.tab_fr")}
               </button>
               <button className={`tab ${activeTab === "en" ? "tab-active" : ""}`} onClick={() => setActiveTab("en")} type="button">
-                🇺🇸 EN
+                {t("admin.program_builder.tab_en")}
               </button>
               <button className={`tab ${activeTab === "es" ? "tab-active" : ""}`} onClick={() => setActiveTab("es")} type="button">
-                🇪🇸 ES
+                {t("admin.program_builder.tab_es")}
               </button>
               <button className={`tab ${activeTab === "pt" ? "tab-active" : ""}`} onClick={() => setActiveTab("pt")} type="button">
-                🇵🇹 PT
+                {t("admin.program_builder.tab_pt")}
               </button>
               <button className={`tab ${activeTab === "ru" ? "tab-active" : ""}`} onClick={() => setActiveTab("ru")} type="button">
-                🇷🇺 RU
+                {t("admin.program_builder.tab_ru")}
               </button>
               <button className={`tab ${activeTab === "zh" ? "tab-active" : ""}`} onClick={() => setActiveTab("zh")} type="button">
-                🇨🇳 ZH
+                {t("admin.program_builder.tab_zh")}
               </button>
             </div>
 
@@ -115,13 +128,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
               <div className="space-y-4">
                 <div>
                   <label className="label">
-                    <span className="label-text">Titre (Français)</span>
+                    <span className="label-text">{t("admin.program_builder.label_title_fr")}</span>
                   </label>
                   <input
                     className="input input-bordered w-full"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder={`Semaine ${nextWeekNumber}`}
+                    placeholder={t("admin.program_builder.default_week_title_fr", { n: nextWeekNumber })}
                     required
                     type="text"
                     value={formData.title}
@@ -129,13 +142,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text">Description (Français)</span>
+                    <span className="label-text">{t("admin.program_builder.label_description_fr")}</span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered w-full h-24"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Description de cette semaine..."
+                    placeholder={t("admin.program_builder.ph_week_desc_fr")}
                     value={formData.description}
                   />
                 </div>
@@ -147,13 +160,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
               <div className="space-y-4">
                 <div>
                   <label className="label">
-                    <span className="label-text">Title (English)</span>
+                    <span className="label-text">{t("admin.program_builder.label_title_en")}</span>
                   </label>
                   <input
                     className="input input-bordered w-full"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
-                    placeholder={`Week ${nextWeekNumber}`}
+                    placeholder={t("admin.program_builder.default_week_title_en", { n: nextWeekNumber })}
                     required
                     type="text"
                     value={formData.titleEn}
@@ -161,13 +174,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text">Description (English)</span>
+                    <span className="label-text">{t("admin.program_builder.label_description_en")}</span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered w-full h-24"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
-                    placeholder="Week description..."
+                    placeholder={t("admin.program_builder.ph_week_desc_en")}
                     value={formData.descriptionEn}
                   />
                 </div>
@@ -179,13 +192,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
               <div className="space-y-4">
                 <div>
                   <label className="label">
-                    <span className="label-text">Título (Español)</span>
+                    <span className="label-text">{t("admin.program_builder.label_title_es")}</span>
                   </label>
                   <input
                     className="input input-bordered w-full"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, titleEs: e.target.value })}
-                    placeholder={`Semana ${nextWeekNumber}`}
+                    placeholder={t("admin.program_builder.default_week_title_es", { n: nextWeekNumber })}
                     required
                     type="text"
                     value={formData.titleEs}
@@ -193,13 +206,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text">Descripción (Español)</span>
+                    <span className="label-text">{t("admin.program_builder.label_description_es")}</span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered w-full h-24"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, descriptionEs: e.target.value })}
-                    placeholder="Descripción de la semana..."
+                    placeholder={t("admin.program_builder.ph_week_desc_es")}
                     value={formData.descriptionEs}
                   />
                 </div>
@@ -211,13 +224,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
               <div className="space-y-4">
                 <div>
                   <label className="label">
-                    <span className="label-text">Título (Português)</span>
+                    <span className="label-text">{t("admin.program_builder.label_title_pt")}</span>
                   </label>
                   <input
                     className="input input-bordered w-full"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, titlePt: e.target.value })}
-                    placeholder={`Semana ${nextWeekNumber}`}
+                    placeholder={t("admin.program_builder.default_week_title_pt", { n: nextWeekNumber })}
                     required
                     type="text"
                     value={formData.titlePt}
@@ -225,13 +238,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text">Descrição (Português)</span>
+                    <span className="label-text">{t("admin.program_builder.label_description_pt")}</span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered w-full h-24"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, descriptionPt: e.target.value })}
-                    placeholder="Descrição da semana..."
+                    placeholder={t("admin.program_builder.ph_week_desc_pt")}
                     value={formData.descriptionPt}
                   />
                 </div>
@@ -243,13 +256,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
               <div className="space-y-4">
                 <div>
                   <label className="label">
-                    <span className="label-text">Название (Русский)</span>
+                    <span className="label-text">{t("admin.program_builder.label_title_ru")}</span>
                   </label>
                   <input
                     className="input input-bordered w-full"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, titleRu: e.target.value })}
-                    placeholder={`Неделя ${nextWeekNumber}`}
+                    placeholder={t("admin.program_builder.default_week_title_ru", { n: nextWeekNumber })}
                     required
                     type="text"
                     value={formData.titleRu}
@@ -257,13 +270,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text">Описание (Русский)</span>
+                    <span className="label-text">{t("admin.program_builder.label_description_ru")}</span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered w-full h-24"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, descriptionRu: e.target.value })}
-                    placeholder="Описание недели..."
+                    placeholder={t("admin.program_builder.ph_week_desc_ru")}
                     value={formData.descriptionRu}
                   />
                 </div>
@@ -275,13 +288,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
               <div className="space-y-4">
                 <div>
                   <label className="label">
-                    <span className="label-text">标题 (中文)</span>
+                    <span className="label-text">{t("admin.program_builder.label_title_zh")}</span>
                   </label>
                   <input
                     className="input input-bordered w-full"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, titleZhCn: e.target.value })}
-                    placeholder={`第${nextWeekNumber}周`}
+                    placeholder={t("admin.program_builder.default_week_title_zh", { n: nextWeekNumber })}
                     required
                     type="text"
                     value={formData.titleZhCn}
@@ -289,13 +302,13 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
                 </div>
                 <div>
                   <label className="label">
-                    <span className="label-text">描述 (中文)</span>
+                    <span className="label-text">{t("admin.program_builder.label_description_zh")}</span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered w-full h-24"
                     disabled={isLoading}
                     onChange={(e) => setFormData({ ...formData, descriptionZhCn: e.target.value })}
-                    placeholder="本周描述..."
+                    placeholder={t("admin.program_builder.ph_week_desc_zh")}
                     value={formData.descriptionZhCn}
                   />
                 </div>
@@ -305,16 +318,16 @@ export function AddWeekModal({ open, onOpenChange, programId, nextWeekNumber }: 
 
           <div className="modal-action">
             <button className="btn btn-ghost" disabled={isLoading} onClick={handleClose} type="button">
-              Annuler
+              {t("admin.program_builder.common_cancel")}
             </button>
             <button className="btn btn-primary" disabled={isLoading} type="submit">
               {isLoading ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  Ajout...
+                  {t("admin.program_builder.week_submit_adding")}
                 </>
               ) : (
-                "Ajouter la semaine"
+                t("admin.program_builder.week_submit_add")
               )}
             </button>
           </div>

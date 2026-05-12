@@ -83,7 +83,11 @@ export async function ProgramCard({ program, size = "medium", locale }: ProgramC
   return (
     <div className="group">
       <Link
-        aria-label={`${title} - ${t(`levels.${program.level}` as keyof typeof t)} program`}
+        aria-label={t("programs.program_card_aria", {
+          title,
+          level: t(`levels.${program.level}` as keyof typeof t),
+          programLabel: t("programs.program"),
+        })}
         className={`
           block rounded-2xl overflow-hidden transition-all duration-300 ease-out
           bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900
@@ -119,7 +123,7 @@ export async function ProgramCard({ program, size = "medium", locale }: ProgramC
               </span>
               {isLocked && (
                 <span className="bg-yellow-400/90 text-yellow-900 px-2 py-1 sm:px-3 rounded-full text-xs font-semibold border border-yellow-400/40 backdrop-blur-sm shadow-sm">
-                  Premium
+                  {t("programs.premium")}
                 </span>
               )}
             </div>
@@ -138,7 +142,7 @@ export async function ProgramCard({ program, size = "medium", locale }: ProgramC
                   <Lock className="text-slate-600 dark:text-slate-400" size={size === "large" ? 16 : 14} />
                 ) : (
                   <Image
-                    alt="Emoji"
+                    alt={t("programs.img_level_badge")}
                     className={"object-contain w-6 h-6"}
                     height={size === "large" ? 24 : 20}
                     loading="lazy"

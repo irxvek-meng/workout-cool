@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Workout Cool",
+    "slug": "workout-cool-mobile",
+    "scheme": "workoutcool",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "cool.workout.mobile"
+    },
+    "plugins": ["expo-router"]
+  }
+}

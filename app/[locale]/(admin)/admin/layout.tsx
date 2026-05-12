@@ -5,18 +5,24 @@ import type { ReactNode } from "react";
 
 import { AdminSidebar } from "@/features/admin/layout/admin-sidebar/ui/admin-sidebar";
 import { AdminHeader } from "@/features/admin/layout/admin-sidebar/ui/admin-header";
-import { serverRequiredUser } from "@/entities/user/model/get-server-session-user";
+import { serverAuth } from "@/entities/user/model/get-server-session-user";
 
 interface AdminLayoutProps {
   params: Promise<{ locale: string }>;
   children: ReactNode;
 }
 
-export default async function AdminLayout({ children }: AdminLayoutProps) {
-  const user = await serverRequiredUser();
+export default async function AdminLayout({ children, params }: AdminLayoutProps) {
+  const { locale } = await params;
+  const user = await serverAuth();
+
+  if (!user) {
+    const redirectTo = encodeURIComponent(`/${locale}/admin/dashboard`);
+    redirect(`/${locale}/auth/signin?redirect=${redirectTo}`);
+  }
 
   if (user.role !== UserRole.admin) {
-    redirect("/");
+    redirect(`/${locale}`);
   }
 
   return (

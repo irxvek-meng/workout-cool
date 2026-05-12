@@ -12,6 +12,7 @@ import { FavoriteExerciseButton } from "../../workout-builder/ui/favorite-exerci
 import { WorkoutSessionSet } from "./workout-session-set";
 
 import { cn } from "@/shared/lib/utils";
+import { getExerciseName } from "@/shared/lib/exercise-i18n";
 import { useWorkoutFeedback } from "@/shared/hooks/use-workout-feedback";
 import { useWorkoutSession } from "@/features/workout-session/model/use-workout-session";
 import { useSyncWorkoutSessions } from "@/features/workout-session/model/use-sync-workout-sessions";
@@ -150,7 +151,7 @@ export function WorkoutSessionSets({
       <ol className="relative border-l-2 ml-2 border-slate-200 dark:border-slate-700">
         {session.exercises.map((ex, idx) => {
           const allSetsCompleted = ex.sets.length > 0 && ex.sets.every((set) => set.completed);
-          const exerciseName = locale === "fr" ? ex.name : ex.nameEn;
+          const exerciseName = getExerciseName(ex, locale);
 
           const details = exerciseDetailsMap[ex.id];
           return (

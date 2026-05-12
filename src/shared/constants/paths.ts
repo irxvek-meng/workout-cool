@@ -10,4 +10,5 @@ export const paths = {
   terms: "/legal/terms",
   programs: "/programs",
   leaderboard: "/leaderboard",
+  exerciseLibrary: "/exercise-library",
 } as const;

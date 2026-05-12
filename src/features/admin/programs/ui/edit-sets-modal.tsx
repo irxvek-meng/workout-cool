@@ -3,16 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus, Minus, Trash2 } from "lucide-react";
+import { useCurrentLocale, useI18n } from "locales/client";
 import { ProgramSessionExercise, ProgramSuggestedSet } from "@prisma/client";
-
-import { AVAILABLE_WORKOUT_SET_TYPES, MAX_WORKOUT_SET_COLUMNS, WORKOUT_SET_UNITS_TUPLE } from "@/shared/constants/workout-set-types";
-import { WorkoutSetType, WorkoutSetUnit } from "@/features/workout-session/types/workout-set";
 
 import { updateExerciseSets } from "../actions/update-exercise-sets.action";
 
+import { getExerciseName } from "@/shared/lib/exercise-i18n";
+import { AVAILABLE_WORKOUT_SET_TYPES, MAX_WORKOUT_SET_COLUMNS, WORKOUT_SET_UNITS_TUPLE } from "@/shared/constants/workout-set-types";
+import { WorkoutSetType, WorkoutSetUnit } from "@/features/workout-session/types/workout-set";
+
+
 interface EditSetsModalProps {
   exercise: ProgramSessionExercise & {
-    exercise: { name: string };
+    exercise: { name: string; nameEn: string | null; nameZhCn?: string | null };
     suggestedSets: ProgramSuggestedSet[];
   };
   open: boolean;
@@ -29,6 +32,8 @@ interface SetData {
 }
 
 export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalProps) {
+  const t = useI18n();
+  const locale = useCurrentLocale();
   const router = useRouter();
   const [sets, setSets] = useState<SetData[]>(() =>
     exercise.suggestedSets.length > 0
@@ -135,7 +140,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
               className="input input-bordered input-sm w-1/2 text-center font-semibold"
               min={0}
               onChange={(e) => handleValueIntChange(setIndex, columnIndex, parseInt(e.target.value) || 0)}
-              placeholder="min"
+              placeholder={t("admin.program_builder.sets_modal_ph_min")}
               type="number"
               value={set.valuesInt[columnIndex] ?? ""}
             />
@@ -144,7 +149,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
               max={59}
               min={0}
               onChange={(e) => handleValueSecChange(setIndex, columnIndex, parseInt(e.target.value) || 0)}
-              placeholder="sec"
+              placeholder={t("admin.program_builder.sets_modal_ph_sec")}
               type="number"
               value={set.valuesSec[columnIndex] ?? ""}
             />
@@ -206,7 +211,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
       router.refresh();
     } catch (error) {
       console.error("Error saving sets:", error);
-      alert(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
+      alert(error instanceof Error ? error.message : t("admin.program_builder.err_update_sets"));
     } finally {
       setIsSaving(false);
     }
@@ -214,11 +219,11 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
 
   const getTypeLabel = (type: WorkoutSetType): string => {
     const labels: Record<WorkoutSetType, string> = {
-      TIME: "Temps",
-      WEIGHT: "Poids",
-      REPS: "Répétitions",
-      BODYWEIGHT: "Poids du corps",
-      NA: "N/A",
+      TIME: t("admin.program_builder.sets_modal_type_time"),
+      WEIGHT: t("admin.program_builder.sets_modal_type_weight"),
+      REPS: t("admin.program_builder.sets_modal_type_reps"),
+      BODYWEIGHT: t("admin.program_builder.sets_modal_type_bodyweight"),
+      NA: t("admin.program_builder.sets_modal_type_na"),
     };
     return labels[type];
   };
@@ -230,7 +235,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
       <div className="modal-box max-w-6xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-bold text-lg">
-            Éditer les séries - {exercise.exercise.name}
+            {t("admin.program_builder.sets_modal_title", { name: getExerciseName(exercise.exercise, locale) })}
           </h3>
           <button className="btn btn-sm btn-circle btn-ghost" onClick={() => onOpenChange(false)}>
             <X className="h-4 w-4" />
@@ -242,9 +247,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
             <div className="card bg-base-200 shadow-sm" key={set.id || setIndex}>
               <div className="card-body p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="badge badge-primary font-semibold">
-                    SÉRIE {setIndex + 1}
-                  </div>
+                  <div className="badge badge-primary font-semibold">{t("admin.program_builder.sets_modal_set_badge", { n: setIndex + 1 })}</div>
                   <button
                     className="btn btn-sm btn-error btn-outline"
                     disabled={sets.length <= 1}
@@ -298,7 +301,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
                       onClick={() => addColumn(setIndex)}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Ajouter une colonne
+                      {t("admin.program_builder.sets_modal_add_column")}
                     </button>
                   )}
                 </div>
@@ -308,7 +311,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
 
           <button className="btn btn-outline w-full" onClick={addSet}>
             <Plus className="h-4 w-4 mr-2" />
-            Ajouter une série
+            {t("admin.program_builder.sets_modal_add_set")}
           </button>
         </div>
 
@@ -318,7 +321,7 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
             disabled={isSaving}
             onClick={() => onOpenChange(false)}
           >
-            Annuler
+            {t("admin.program_builder.common_cancel")}
           </button>
           <button 
             className="btn btn-primary" 
@@ -328,10 +331,10 @@ export function EditSetsModal({ exercise, open, onOpenChange }: EditSetsModalPro
             {isSaving ? (
               <>
                 <span className="loading loading-spinner loading-sm"></span>
-                Sauvegarde...
+                {t("admin.program_builder.common_saving")}
               </>
             ) : (
-              "Sauvegarder"
+              t("admin.program_builder.common_save")
             )}
           </button>
         </div>

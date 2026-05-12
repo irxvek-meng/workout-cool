@@ -4,7 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { LogOut, Menu, X, UserCog } from "lucide-react";
+import { useCurrentLocale, useI18n } from "locales/client";
 import Logo from "@public/logo.png";
+
 
 import type { SessionUser } from "@/entities/user/types/session-user";
 
@@ -20,6 +22,8 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ user }: AdminHeaderProps) {
+  const t = useI18n();
+  const locale = useCurrentLocale();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const logout = useLogout(paths.root);
 
@@ -32,9 +36,9 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
 
-          <Link className="flex items-center space-x-3" href="/admin">
+          <Link className="flex items-center space-x-3" href={`/${locale}/admin`}>
             <Image alt="WorkoutCool Logo" className="h-8 w-8" height={32} src={Logo} width={32} />
-            <span className="hidden text-xl font-semibold text-gray-900 sm:block dark:text-white">Administration</span>
+            <span className="hidden text-xl font-semibold text-gray-900 sm:block dark:text-white">{t("admin.header_brand")}</span>
           </Link>
         </div>
 
@@ -59,15 +63,15 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
-                <Link className="flex items-center space-x-2" href={`/${paths.profile}`}>
+                <Link className="flex items-center space-x-2" href={`/${locale}/${paths.profile}`}>
                   <UserCog className="h-4 w-4" />
-                  <span>Profil</span>
+                  <span>{t("admin.header_profile")}</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => logout.mutate()}>
                 <div className="flex items-center space-x-2">
                   <LogOut className="h-4 w-4" />
-                  <span>Déconnexion</span>
+                  <span>{t("admin.header_logout")}</span>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

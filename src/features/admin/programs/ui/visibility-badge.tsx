@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Archive, ChevronDown } from "lucide-react";
 import { ProgramVisibility } from "@prisma/client";
+import { useI18n } from "locales/client";
 
 import { updateProgramVisibility } from "../actions/update-program-visibility.action";
 
@@ -12,29 +13,34 @@ interface VisibilityBadgeProps {
   currentVisibility: ProgramVisibility;
 }
 
-const visibilityConfig = {
-  [ProgramVisibility.DRAFT]: {
-    label: "Brouillon",
-    icon: EyeOff,
-    color: "badge-warning",
-  },
-  [ProgramVisibility.PUBLISHED]: {
-    label: "Publié",
-    icon: Eye,
-    color: "badge-success",
-  },
-  [ProgramVisibility.ARCHIVED]: {
-    label: "Archivé",
-    icon: Archive,
-    color: "badge-neutral",
-  },
-};
+const visibilityIcons = {
+  [ProgramVisibility.DRAFT]: EyeOff,
+  [ProgramVisibility.PUBLISHED]: Eye,
+  [ProgramVisibility.ARCHIVED]: Archive,
+} as const;
+
+const visibilityColors = {
+  [ProgramVisibility.DRAFT]: "badge-warning",
+  [ProgramVisibility.PUBLISHED]: "badge-success",
+  [ProgramVisibility.ARCHIVED]: "badge-neutral",
+} as const;
 
 export function VisibilityBadge({ programId, currentVisibility }: VisibilityBadgeProps) {
+  const t = useI18n();
   const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
 
-  const config = visibilityConfig[currentVisibility];
+  const visibilityLabels: Record<ProgramVisibility, string> = {
+    [ProgramVisibility.DRAFT]: t("admin.program_builder.visibility_draft"),
+    [ProgramVisibility.PUBLISHED]: t("admin.program_builder.visibility_published"),
+    [ProgramVisibility.ARCHIVED]: t("admin.program_builder.visibility_archived"),
+  };
+
+  const config = {
+    label: visibilityLabels[currentVisibility],
+    icon: visibilityIcons[currentVisibility],
+    color: visibilityColors[currentVisibility],
+  };
   const Icon = config.icon;
 
   const handleVisibilityChange = async (newVisibility: ProgramVisibility) => {
@@ -48,7 +54,7 @@ export function VisibilityBadge({ programId, currentVisibility }: VisibilityBadg
       router.refresh();
     } catch (error) {
       console.error("Error updating visibility:", error);
-      alert(error instanceof Error ? error.message : "Erreur lors de la mise à jour");
+      alert(error instanceof Error ? error.message : t("admin.program_builder.err_visibility"));
     } finally {
       setIsUpdating(false);
     }
@@ -64,8 +70,8 @@ export function VisibilityBadge({ programId, currentVisibility }: VisibilityBadg
 
       <ul className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52" tabIndex={0}>
         {Object.entries(ProgramVisibility).map(([key, value]) => {
-          const itemConfig = visibilityConfig[value];
-          const ItemIcon = itemConfig.icon;
+          const ItemIcon = visibilityIcons[value];
+          const itemLabel = visibilityLabels[value];
 
           return (
             <li key={key}>
@@ -74,7 +80,7 @@ export function VisibilityBadge({ programId, currentVisibility }: VisibilityBadg
                 onClick={() => handleVisibilityChange(value)}
               >
                 {isUpdating ? <span className="loading loading-spinner loading-xs"></span> : <ItemIcon className="w-4 h-4" />}
-                {itemConfig.label}
+                {itemLabel}
               </a>
             </li>
           );

@@ -1,9 +1,15 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Play, Shuffle, MoreVertical, Trash2, Info, Target } from "lucide-react";
+import { useCurrentLocale, useI18n } from "locales/client";
 import { ExerciseAttributeNameEnum } from "@prisma/client";
 
-import { useI18n } from "locales/client";
+
+import { ExerciseVideoModal } from "./exercise-video-modal";
+
+import type { ExerciseWithAttributes } from "../types";
+
+import { getExerciseIntroduction, getExerciseName } from "@/shared/lib/exercise-i18n";
 import { getExerciseAttributesValueOf } from "@/entities/exercise/shared/muscles";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -11,9 +17,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-import { ExerciseVideoModal } from "./exercise-video-modal";
 
-import type { ExerciseWithAttributes } from "../types";
 
 interface ExerciseCardProps {
   exercise: ExerciseWithAttributes;
@@ -25,6 +29,9 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({ exercise, muscle, onShuffle, onPick, onDelete }: ExerciseCardProps) {
   const t = useI18n();
+  const locale = useCurrentLocale();
+  const exerciseName = getExerciseName(exercise, locale);
+  const exerciseIntroduction = getExerciseIntroduction(exercise, locale);
   const [imageError, setImageError] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
 
@@ -46,7 +53,7 @@ export function ExerciseCard({ exercise, muscle, onShuffle, onPick, onDelete }: 
             {exercise.fullVideoImageUrl && !imageError ? (
               <>
                 <Image
-                  alt={exercise.name}
+                  alt={exerciseName}
                   className="object-cover transition-transform group-hover:scale-105"
                   fill
                   loading="lazy"
@@ -102,7 +109,7 @@ export function ExerciseCard({ exercise, muscle, onShuffle, onPick, onDelete }: 
         <CardContent className="p-4">
           {/* Titre de l'exercice */}
           <div className="flex items-start justify-between mb-3">
-            <h4 className="font-semibold text-slate-900 dark:text-slate-200 text-sm leading-tight line-clamp-2">{exercise.name}</h4>
+            <h4 className="font-semibold text-slate-900 dark:text-slate-200 text-sm leading-tight line-clamp-2">{exerciseName}</h4>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button className="h-8 w-8 ml-2 flex-shrink-0" size="small" variant="ghost">
@@ -111,7 +118,7 @@ export function ExerciseCard({ exercise, muscle, onShuffle, onPick, onDelete }: 
               </TooltipTrigger>
               <TooltipContent className="max-w-xs" side="left">
                 <div className="space-y-2">
-                  <p className="text-sm">{exercise.introduction}</p>
+                  <p className="text-sm">{exerciseIntroduction}</p>
                   {mechanicsTypeValue && (
                     <p className="text-xs text-slate-500">
                       <strong>Type:</strong> {mechanicsTypeValue.map((mt) => mt.replace("_", " ")).join(", ")}

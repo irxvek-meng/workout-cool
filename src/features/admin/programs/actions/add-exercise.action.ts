@@ -96,7 +96,11 @@ export async function getExercises(search?: string): Promise<ExerciseWithAttribu
 
   const where = search
     ? {
-        OR: [{ name: { contains: search, mode: "insensitive" as const } }, { nameEn: { contains: search, mode: "insensitive" as const } }],
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { nameEn: { contains: search, mode: "insensitive" as const } },
+          { nameZhCn: { contains: search, mode: "insensitive" as const } },
+        ],
       }
     : {};
 
